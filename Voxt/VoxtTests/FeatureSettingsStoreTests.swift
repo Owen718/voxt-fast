@@ -62,6 +62,7 @@ final class FeatureSettingsStoreTests: XCTestCase {
 
             XCTAssertTrue(settings.transcription.llmEnabled)
             XCTAssertEqual(settings.transcription.llmSelectionID, .localLLM(CustomLLMModelCatalog.defaultModelRepo))
+            XCTAssertEqual(settings.transcription.promptPresetID, "light")
             XCTAssertEqual(defaults.string(forKey: AppPreferenceKey.enhancementMode), EnhancementMode.customLLM.rawValue)
             XCTAssertEqual(defaults.string(forKey: AppPreferenceKey.customLLMModelRepo), CustomLLMModelCatalog.defaultModelRepo)
         }
@@ -95,6 +96,7 @@ final class FeatureSettingsStoreTests: XCTestCase {
         defer { VoxtFastProfile.isActiveOverrideForTesting = nil }
         try withEphemeralDefaults { defaults in
             FeatureSettingsStore.migrateIfNeeded(defaults: defaults)
+            XCTAssertEqual(FeatureSettingsStore.load(defaults: defaults).transcription.promptPresetID, "precise")
 
             XCTAssertFalse(FeatureSettingsStore.load(defaults: defaults).transcription.llmEnabled)
             XCTAssertEqual(defaults.string(forKey: AppPreferenceKey.enhancementMode), EnhancementMode.off.rawValue)

@@ -172,11 +172,19 @@ enum FeatureSettingsStore {
         let translationText = legacyTranslationSelection(defaults: defaults)
         let rewriteText = legacyRewriteSelection(defaults: defaults)
         let promptLanguage = AppPromptDefaults.interfaceLanguage(from: defaults)
-        let transcriptionPrompt = AppPromptDefaults.resolvedStoredText(
-            defaults.string(forKey: AppPreferenceKey.enhancementSystemPrompt),
+        let storedTranscriptionPrompt = defaults.string(forKey: AppPreferenceKey.enhancementSystemPrompt)
+        var transcriptionPrompt = AppPromptDefaults.resolvedStoredText(
+            storedTranscriptionPrompt,
             kind: .enhancement,
             defaults: defaults
         )
+        // Voxt Fast turns enhancement on for a fresh install (`defaultEnhancementMode`) and starts it
+        // on the "Light Cleanup" preset, which keeps the speaker's wording; the default "Precise
+        // Cleanup" rewrites sentences. A stored prompt is never replaced.
+        if storedTranscriptionPrompt == nil, VoxtFastProfile.isActive,
+           let light = FeaturePromptPresetCatalog.preset(id: "light", for: .enhancement, language: promptLanguage) {
+            transcriptionPrompt = light.prompt
+        }
         let translationPrompt = AppPromptDefaults.resolvedStoredText(
             defaults.string(forKey: AppPreferenceKey.translationSystemPrompt),
             kind: .translation,
