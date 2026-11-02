@@ -12,19 +12,19 @@ final class MLXModelManagerTests: MLXModelManagerTestCase {
         )
         XCTAssertEqual(
             MLXModelManager.canonicalModelRepo("mlx-community/GLM-ASR-Nano-4bit"),
-            MLXModelCatalog.defaultModelRepo
+            "mlx-community/Qwen3-ASR-0.6B-4bit"
         )
         XCTAssertEqual(
             MLXModelManager.canonicalModelRepo("mlx-community/Voxtral-Mini-4B-Realtime-2602"),
-            MLXModelCatalog.defaultModelRepo
+            "mlx-community/Qwen3-ASR-0.6B-4bit"
         )
         XCTAssertEqual(
             MLXModelManager.canonicalModelRepo("mlx-community/Voxtral-Mini-4B-Realtime-2602-6bit"),
-            MLXModelCatalog.defaultModelRepo
+            "mlx-community/Qwen3-ASR-0.6B-4bit"
         )
         XCTAssertEqual(
             MLXModelManager.canonicalModelRepo("mlx-community/FireRedASR2"),
-            MLXModelCatalog.defaultModelRepo
+            "mlx-community/Qwen3-ASR-0.6B-4bit"
         )
     }
 
