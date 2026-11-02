@@ -29,6 +29,11 @@ struct Options {
   // the top-1 logit, so a near tie does not flip the hypothesis on every update.
   float hyst_delta = 2.0f;   // previews
   float final_delta = 0.5f;  // final (0 = exact greedy)
+  // A preview keeps the draft's stop token only when it is still the top-1 token (no
+  // hysteresis): new audio must be able to extend a hypothesis that ended early. Used for
+  // Qwen3-ASR 0.6B, whose guess from a segment's first half second can be a whole made-up
+  // sentence that the hysteresis then keeps re-accepting, stop token included.
+  bool exact_stop = false;
   // Confirm: a low-margin word is shown when every hypothesis of the last `confirm_ms` of audio
   // agrees on it (time-based, independent of the cadence); without hypotheses in that window,
   // when the last `confirm` updates agree.

@@ -21,14 +21,17 @@
 
 namespace enc {
 
-constexpr int kDModel = 1024;
-constexpr int kHeads = 16;
-constexpr int kHeadDim = kDModel / kHeads;  // 64
-constexpr int kLayers = 24;
+// Model sizes: Qwen3-ASR 1.7B values; Encoder's constructor sets them from the checkpoint's
+// audio_config (0.6B: d_model 896, 14 heads, 18 layers, ffn 3584, output 1024).
+inline int kDModel = 1024;
+inline int kHeads = 16;
+constexpr int kHeadDim = 64;
+inline int kLayers = 24;
+inline int kMlp = 4096;
 constexpr int kChunkFrames = 100;           // n_window * 2
 constexpr int kChunksPerWindow = 8;         // n_window_infer / kChunkFrames
 constexpr int kMelBins = 128;
-constexpr int kOutputDim = 2048;
+inline int kOutputDim = 2048;
 constexpr float kLayerNormEps = 1e-5f;
 
 int conv_frames(int frames);          // three stride-2 convs: (f - 1) / 2 + 1, three times

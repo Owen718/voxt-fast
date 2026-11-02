@@ -14,7 +14,6 @@ namespace {
 
 constexpr int kConvFramesMax = 13;  // conv_frames(100)
 constexpr int kConvOutK = 480 * 16;
-constexpr int kMlp = 4096;
 
 int FloorDiv(int a, int b) {
   const int q = a / b;
@@ -154,6 +153,7 @@ void Attention(gpu::Cmd &c, const gpu::Tensor &q, const gpu::Tensor &k, const gp
   c.set(out, 3);
   c.set_value(l, 4);
   c.set_value(scale, 5);
+  c.set_value(kDModel, 6);
   c.dispatch_groups(MTLSizeMake(kHeads, (L + 7) / 8, 1), MTLSizeMake(256, 1, 1));
   c.barrier();
 }
@@ -287,7 +287,25 @@ struct Encoder::Impl {
   }
 };
 
-Encoder::Encoder(const Weights &w) : impl_(new Impl(w)) {}
+namespace {
+// Reads the encoder sizes from the checkpoint and rejects shapes the kernels do not handle.
+const Weights &configure(const Weights &w) {
+  const json::Value &a = w.config["thinker_config"]["audio_config"];
+  const int d = (int)a["d_model"].as_int(), heads = (int)a["encoder_attention_heads"].as_int();
+  if (heads <= 0 || d != heads * kHeadDim || (int)a["downsample_hidden_size"].as_int() != 480 ||
+      (int)a["num_mel_bins"].as_int() != kMelBins || (int)a["n_window"].as_int() * 2 != kChunkFrames ||
+      (int)a["n_window_infer"].as_int() != kChunkFrames * kChunksPerWindow)
+    throw std::runtime_error("unsupported audio encoder configuration");
+  kDModel = d;
+  kHeads = heads;
+  kLayers = (int)a["encoder_layers"].as_int();
+  kMlp = (int)a["encoder_ffn_dim"].as_int();
+  kOutputDim = (int)a["output_dim"].as_int();
+  return w;
+}
+}  // namespace
+
+Encoder::Encoder(const Weights &w) : impl_(new Impl(configure(w))) {}
 
 Encoder::~Encoder() = default;
 

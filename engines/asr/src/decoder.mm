@@ -9,12 +9,32 @@ namespace dec {
 
 namespace {
 
+// Quantization bits of the loaded checkpoint (6: Qwen3-ASR 1.7B, 4: 0.6B), set by the Decoder
+// constructor. Kernel names below are written for 6 bits; qk() swaps in the loaded width.
+int g_bits = 6;
+const char *qk(const char *name6) {
+  if (g_bits == 6) return name6;
+  static thread_local std::string ring[4];
+  static thread_local int next = 0;
+  std::string &s = ring[next++ & 3];
+  s = name6;
+  for (const char *pat : {"_b_6", "_b6"}) {
+    const size_t at = s.find(pat);
+    if (at != std::string::npos) {
+      const size_t len = std::strlen(pat);
+      s.replace(at + len - 1, 1, std::to_string(g_bits));
+      break;
+    }
+  }
+  return s.c_str();
+}
+
 // qmv_fast dispatch exactly as MLX quantized.cpp qmv() for M rows, one batch:
 // grid (M, ceil(N/8), 1), group (32, 2, 1).
 void dispatch_qmv_fast(gpu::Cmd &c, const gpu::Tensor &x, const gpu::Tensor &w,
                        const gpu::Tensor &s, const gpu::Tensor &b, gpu::Tensor &y,
                        int M, int N, int K) {
-  c.use("affine_qmv_fast_bfloat16_t_gs_64_b_6_batch_0");
+  c.use(qk("affine_qmv_fast_bfloat16_t_gs_64_b_6_batch_0"));
   c.set(w, 0);
   c.set(s, 1);
   c.set(b, 2);
@@ -108,7 +128,7 @@ void dispatch_qmv3(gpu::Cmd &c, const gpu::Tensor &x, const gpu::Tensor &w0,
                    const gpu::Tensor &s1, const gpu::Tensor &b1, const gpu::Tensor &w2,
                    const gpu::Tensor &s2, const gpu::Tensor &b2, gpu::Tensor &y, int M, int n0,
                    int n1, int n2, int K, int shape = 0) {
-  c.use(qmv_kern("dec_qmv3_bf16_gs64_b6", shape));
+  c.use(qmv_kern(qk("dec_qmv3_bf16_gs64_b6"), shape));
   c.set(w0, 0); c.set(s0, 1); c.set(b0, 2);
   c.set(w1, 3); c.set(s1, 4); c.set(b1, 5);
   c.set(w2, 6); c.set(s2, 7); c.set(b2, 8);
@@ -121,7 +141,7 @@ void dispatch_qmv2(gpu::Cmd &c, const gpu::Tensor &x, const gpu::Tensor &w0,
                    const gpu::Tensor &s0, const gpu::Tensor &b0, const gpu::Tensor &w1,
                    const gpu::Tensor &s1, const gpu::Tensor &b1, gpu::Tensor &y, int M, int n0,
                    int n1, int K, int shape = 0) {
-  c.use(qmv_kern("dec_qmv2_bf16_gs64_b6", shape));
+  c.use(qmv_kern(qk("dec_qmv2_bf16_gs64_b6"), shape));
   c.set(w0, 0); c.set(s0, 1); c.set(b0, 2);
   c.set(w1, 3); c.set(s1, 4); c.set(b1, 5);
   c.set(x, 6); c.set(y, 7);
@@ -133,7 +153,7 @@ void dispatch_qmv2(gpu::Cmd &c, const gpu::Tensor &x, const gpu::Tensor &w0,
 void dispatch_qmv_add(gpu::Cmd &c, const gpu::Tensor &x, const gpu::Tensor &w,
                       const gpu::Tensor &s, const gpu::Tensor &b, const gpu::Tensor &res,
                       gpu::Tensor &y, int M, int N, int K, int shape = 0) {
-  c.use(qmv_kern("dec_qmv_add_bf16_gs64_b6", shape));
+  c.use(qmv_kern(qk("dec_qmv_add_bf16_gs64_b6"), shape));
   c.set(w, 0); c.set(s, 1); c.set(b, 2); c.set(x, 3); c.set(res, 4); c.set(y, 5);
   c.set_value(K, 6); c.set_value(N, 7);
   c.dispatch_groups(MTLSizeMake(M, ((N) + qmv_rows(shape) - 1) / qmv_rows(shape), 1), qmv_tg(shape));
@@ -202,7 +222,8 @@ void dispatch_qmv_wide(gpu::Cmd &c, const gpu::Tensor &x, const gpu::Tensor &w,
   int vecs = (M + n_tiles - 1) / n_tiles;
   int rows_per_tg = (32 / 8) * 2;
   char name[64];
-  std::snprintf(name, sizeof(name), "dec_qmv_wide_nv%d", vecs);
+  if (g_bits == 6) std::snprintf(name, sizeof(name), "dec_qmv_wide_nv%d", vecs);
+  else std::snprintf(name, sizeof(name), "dec_qmv_wide_b%d_nv%d", g_bits, vecs);
   c.use(name);
   c.set(w, 0);
   c.set(s, 1);
@@ -238,7 +259,7 @@ QmmPlan qmm_plan(int M, int N, int K, int group_size) {
 
 void dispatch_qmm_t(gpu::Cmd &c, const gpu::Tensor &x, const gpu::Tensor &w, const gpu::Tensor &s,
                     const gpu::Tensor &b, gpu::Tensor &y, int M, int N, int K) {
-  c.use("affine_qmm_t_bfloat16_t_gs_64_b_6_alN_true_batch_0");
+  c.use(qk("affine_qmm_t_bfloat16_t_gs_64_b_6_alN_true_batch_0"));
   c.set(w, 0);
   c.set(s, 1);
   c.set(b, 2);
@@ -254,7 +275,7 @@ void dispatch_qmm_splitk(gpu::Cmd &c, const gpu::Tensor &x, const gpu::Tensor &w
                          const gpu::Tensor &s, const gpu::Tensor &b, gpu::Tensor &temp,
                          int M, int N, int K, const QmmPlan &plan) {
   int stride = M * N;
-  c.use("affine_qmm_t_splitk_bfloat16_t_gs_64_b_6_alN_true");
+  c.use(qk("affine_qmm_t_splitk_bfloat16_t_gs_64_b_6_alN_true"));
   c.set(w, 0);
   c.set(s, 1);
   c.set(b, 2);
@@ -340,6 +361,13 @@ Decoder::Decoder(const Weights &w) : w_(w) {
   cfg_.vocab = (int)tc["vocab_size"].as_int();
   cfg_.eps = (float)tc["rms_norm_eps"].as_num();
   cfg_.rope_theta = (float)tc["rope_theta"].as_num();
+  const json::Value &q = w.config["quantization"];
+  const int bits = (int)q["bits"].as_int(), group = (int)q["group_size"].as_int();
+  if ((bits != 6 && bits != 4) || group != 64)
+    throw std::runtime_error("unsupported quantization: bits " + std::to_string(bits) +
+                             ", group size " + std::to_string(group) +
+                             " (supported: 4 or 6 bits, group size 64)");
+  g_bits = bits;
 }
 
 gpu::Tensor Decoder::rms_norm(const gpu::Tensor &x, const std::string &wname, int rows, int axis) {
@@ -371,7 +399,7 @@ gpu::Tensor Decoder::embed(const std::vector<int> &ids) {
 
 void Decoder::embed_into(gpu::Cmd &c, const std::vector<int> &ids, gpu::Tensor &out) {
   int n = (int)ids.size();
-  int K = cfg_.hidden, packed = K * 6 / 32, groups = K / 64;
+  int K = cfg_.hidden, packed = K * g_bits / 32, groups = K / 64;
   auto &ctx = gpu::Context::get();
   if (n > gather_cap_) {
     gather_cap_ = n;
@@ -403,9 +431,10 @@ void Decoder::embed_into(gpu::Cmd &c, const std::vector<int> &ids, gpu::Tensor &
   c.set_value(packed, 8);
   c.set_value(groups, 9);
   c.dispatch_threads(MTLSizeMake(packed + groups, n, 1), MTLSizeMake(32, 1, 1));
-  // dequantize: nthreads = n*K/4, group = min(1024, nthreads) (MLX get_quantize_kernel_dims)
-  size_t nthreads = (size_t)n * K / 4;
-  c.use("affine_dequantize_bfloat16_t_gs_64_b_6");
+  // dequantize: one thread per pack (4 values at 6 bits, 2 at 4 bits; MLX get_pack_factor),
+  // group = min(1024, nthreads) (MLX get_quantize_kernel_dims)
+  size_t nthreads = (size_t)n * K / (g_bits == 6 ? 4 : 8 / g_bits);
+  c.use(qk("affine_dequantize_bfloat16_t_gs_64_b_6"));
   c.set(gather_w_, 0);
   c.set(gather_s_, 1);
   c.set(gather_b_, 2);

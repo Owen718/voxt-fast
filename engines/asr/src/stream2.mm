@@ -1001,6 +1001,7 @@ struct Stream::Impl {
         continue;
       }
       if (!lg) break;
+      if (o.exact_stop && !is_final && host::IsStopToken(ids[acc], rules)) break;
       const float l_top = gpu::bf16_to_f32(lg[(size_t)r * vocab + rout[r].argmax]);
       const float l_draft = gpu::bf16_to_f32(lg[(size_t)r * vocab + ids[acc]]);
       if (l_draft < l_top - delta) break;
