@@ -17,8 +17,14 @@ nonisolated enum VoxtFastProfile {
         isActiveOverrideForTesting ?? isMainBundleFast
     }
 
-    /// The ASR checkpoint the bundled fast engine runs.
+    /// The default ASR checkpoint; hidden selections fall back to it.
     static var asrModelRepo: String { MLXModelCatalog.defaultModelRepo }
+
+    /// Every ASR checkpoint the bundled fast engine runs (adapter/main.swift routes the same two).
+    static let asrModelRepos: Set<String> = [
+        "mlx-community/Qwen3-ASR-1.7B-6bit",
+        "mlx-community/Qwen3-ASR-0.6B-4bit",
+    ]
 
     /// The LLM checkpoint the bundled fast engine runs (enhancement, translation, rewrite, summaries).
     static var llmModelRepo: String { CustomLLMModelCatalog.defaultModelRepo }

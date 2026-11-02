@@ -80,6 +80,7 @@ struct OnboardingGuideView: View {
     // Voxt Fast: recommend the checkpoints the bundled fast engines run.
     static let preferredLocalASRRepos = [
         "mlx-community/Qwen3-ASR-1.7B-6bit",
+        "mlx-community/Qwen3-ASR-0.6B-4bit",
         "OpenMOSS-Team/MOSS-Transcribe-Diarize",
         "mlx-community/whisper-large-v3-turbo"
     ]

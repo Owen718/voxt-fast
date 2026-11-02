@@ -543,8 +543,9 @@ final class FeatureModelCatalogBuilderTests: MLXModelManagerTestCase {
         let llm = FeatureModelSelectionID.localLLM(CustomLLMModelCatalog.defaultModelRepo)
         let builder = makeBuilder(featureSettings: makeFeatureSettings(transcriptionASR: asr))
 
+        let smallASR = FeatureModelSelectionID.mlx("mlx-community/Qwen3-ASR-0.6B-4bit")
         for sheet in [FeatureModelSelectorSheet.transcriptionASR, .translationASR, .rewriteASR, .meetingASR] {
-            XCTAssertEqual(builder.entries(for: sheet).map(\.selectionID), [asr], sheet.rawValue)
+            XCTAssertEqual(Set(builder.entries(for: sheet).map(\.selectionID)), [asr, smallASR], sheet.rawValue)
         }
         for sheet in [FeatureModelSelectorSheet.transcriptionLLM, .transcriptionNoteTitle, .rewriteLLM, .meetingSummary, .translationModel] {
             XCTAssertEqual(builder.entries(for: sheet).map(\.selectionID), [llm], sheet.rawValue)
