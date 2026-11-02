@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1A1B1D"/>
+      <stop offset="1" stop-color="#070708"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8FD400"/>
+      <stop offset="1" stop-color="#76B900"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <ellipse cx="506" cy="498" rx="326" ry="150" transform="rotate(39 506 498)" fill="#26292C"/>
+  <g transform="rotate(39 506 498)" opacity="1.0">
+    <mask id="cres">
+      <rect x="-400" y="-400" width="2000" height="2000" fill="white"/>
+      <ellipse cx="490" cy="474" rx="318" ry="136" fill="black"/>
+    </mask>
+    <ellipse cx="506" cy="498" rx="326" ry="150" fill="url(#green)" mask="url(#cres)"/>
+  </g>
+  <g id="mic">
+    <rect x="368" y="200" width="296" height="430" rx="148" fill="#FFFFFF"/>
+    <path d="M310 474 V524 A202 202 0 0 0 714 524 V474" fill="none" stroke="#FFFFFF" stroke-width="50" stroke-linecap="round"/>
+    <rect x="477" y="722" width="70" height="88" fill="#FFFFFF"/>
+    <rect x="404" y="800" width="216" height="54" rx="27" fill="#FFFFFF"/>
+    <ellipse cx="458" cy="378" rx="46" ry="60" fill="#2A2522"/>
+    <circle cx="472" cy="338" r="22" fill="#2A2522"/>
+    <circle cx="472" cy="338" r="14" fill="#FFFFFF"/>
+    <ellipse cx="572" cy="378" rx="46" ry="60" fill="#2A2522"/>
+    <circle cx="586" cy="338" r="22" fill="#2A2522"/>
+    <circle cx="586" cy="338" r="14" fill="#FFFFFF"/>
+  </g>
+  <g transform="translate(652 132) scale(0.375)">
+    <path d="M200 130 L490 130 L490 212 L248 212 C206 212 176 216 150 224 C148 182 160 136 200 130 Z" fill="#76B900"/>
+    <path d="M164 326 C96 368 44 414 58 446 C74 476 196 462 334 442 L334 420 C214 436 116 446 104 424 C94 404 128 372 176 348 Z" fill="#76B900"/>
+    <path d="M222 232 L298 232 C292 318 282 378 270 420 L182 442 C206 378 220 300 222 232 Z" fill="#8E99A4"/>
+    <path d="M360 232 L434 232 L434 436 C434 450 446 458 468 462 L372 462 C366 400 362 300 360 232 Z" fill="#8E99A4"/>
+    <path d="M520 146 C602 148 628 200 604 252 C584 294 534 332 486 354 L474 330 C520 296 554 260 560 226 C566 192 546 174 518 174 Z" fill="#8E99A4"/>
+    <rect x="550" y="66" width="44" height="44" fill="#8E99A4"/>
+    <rect x="568" y="44" width="57" height="57" fill="#76B900"/>
+  </g>
+</svg>
