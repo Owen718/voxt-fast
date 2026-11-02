@@ -248,7 +248,9 @@ extension OnboardingGuideView {
             .frame(maxWidth: .infinity, alignment: .topLeading)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text(AppLocalization.localizedString("Translation (Optional)"))
+                Text(AppLocalization.localizedString(
+                    VoxtFastProfile.isActive ? "Text Enhancement & Translation" : "Translation (Optional)"
+                ))
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.secondary)
                 ForEach(displayedLocalLLMRepos, id: \.self) { repo in
@@ -380,10 +382,24 @@ extension OnboardingGuideView {
                 let canonicalRepo = MLXModelManager.canonicalModelRepo(repo)
                 modelDraft.speech = .mlx(canonicalRepo)
                 Task { await mlxModelManager.downloadModel(repo: canonicalRepo) }
+                downloadEnhancementModelIfNeeded()
             },
             onPause: { mlxModelManager.pauseDownload(repo: repo) },
             onCancel: { mlxModelManager.cancelDownload(repo: repo) }
         )
+    }
+
+    /// Voxt Fast enhances dictation with its accelerated LLM by default, so the guide fetches
+    /// that model together with the speech model, in the background: it is not required to
+    /// continue. An installed model is detected by the download itself; a paused download is
+    /// left for the user to resume.
+    func downloadEnhancementModelIfNeeded() {
+        guard VoxtFastProfile.isActive else { return }
+        let repo = VoxtFastProfile.llmModelRepo
+        guard !customLLMManager.isModelDownloaded(repo: repo),
+              !customLLMManager.isDownloading(repo: repo),
+              !customLLMManager.isPaused(repo: repo) else { return }
+        Task { await customLLMManager.downloadModel(repo: repo) }
     }
 
     func localLLMModelRow(repo: String) -> some View {

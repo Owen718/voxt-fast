@@ -35,10 +35,13 @@ extension AppDelegate {
             guard let enhancementRepo = resolvedTranscriptionEnhancementLocalRepo(),
                   customLLMManager.canAttemptInference(repo: enhancementRepo) else {
                 VoxtLog.asrWarning("Custom LLM selected but local model is not installed. Using raw transcription.")
-                showOverlayStatus(
-                    AppLocalization.localizedString("Custom LLM model is not installed. Open Settings > Model to install it."),
-                    clearAfter: 2.5
-                )
+                if !didShowMissingEnhancementModelNotice {
+                    didShowMissingEnhancementModelNotice = true
+                    showOverlayStatus(
+                        AppLocalization.localizedString("Custom LLM model is not installed. Open Settings > Model to install it."),
+                        clearAfter: 2.5
+                    )
+                }
                 setEnhancingState(false)
                 overlayState.transcribedText = text
                 VoxtLog.asr("Standard transcription falling back to raw text because custom model is unavailable. characters=\(text.count)", verbose: true)

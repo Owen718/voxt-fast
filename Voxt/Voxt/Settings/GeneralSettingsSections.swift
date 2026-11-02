@@ -470,10 +470,12 @@ struct GeneralAppBehaviorCard: View {
                 isOn: $showInDock
             )
 
-            GeneralToggleRow(
-                title: localizedKey("Automatically check for updates"),
-                isOn: $autoCheckForUpdates
-            )
+            if AppUpdateManager.supportsUpdateChecks {
+                GeneralToggleRow(
+                    title: localizedKey("Automatically check for updates"),
+                    isOn: $autoCheckForUpdates
+                )
+            }
 
             if let launchAtLoginError {
                 Text(launchAtLoginError)

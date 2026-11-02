@@ -2341,6 +2341,7 @@
 "Select the sample, then use the same translation shortcut." = "选中示例文字，再使用同一个翻译快捷键。";
 "You know the basics. Discover these features whenever you need them." = "你已经掌握基本用法，其他功能可以在需要时慢慢探索。";
 "Translation (Optional)" = "翻译模型（可选）";
+"Text Enhancement & Translation" = "文本增强与翻译";
 "Selections are applied when you continue. Other feature settings stay unchanged." = "点击继续后才会应用选择，不会覆盖其他功能的设置。";
 "Private and offline after download. Only a speech model is required." = "下载后可离线使用，语音留在本机。只需准备一个语音模型。";
 "Requires internet and your provider credentials. Audio is sent to your chosen provider." = "需要网络和服务凭据，音频将发送到你选择的服务商。";

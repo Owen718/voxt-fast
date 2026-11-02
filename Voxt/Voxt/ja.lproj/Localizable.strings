@@ -2335,6 +2335,7 @@
 "Select the sample, then use the same translation shortcut." = "例文を選択して、同じ翻訳ショートカットを使いましょう。";
 "You know the basics. Discover these features whenever you need them." = "基本操作はこれで完了です。ほかの機能は必要なときに試してみましょう。";
 "Translation (Optional)" = "翻訳モデル（任意）";
+"Text Enhancement & Translation" = "テキスト強化と翻訳";
 "Selections are applied when you continue. Other feature settings stay unchanged." = "選択は「続ける」で適用されます。他の機能の設定は変更されません。";
 "Private and offline after download. Only a speech model is required." = "ダウンロード後はオフラインで使えます。音声モデルだけで始められます。";
 "Requires internet and your provider credentials. Audio is sent to your chosen provider." = "ネット接続と認証情報が必要です。音声は選択したサービスに送信されます。";

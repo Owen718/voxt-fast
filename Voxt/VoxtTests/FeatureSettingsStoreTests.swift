@@ -53,6 +53,54 @@ final class FeatureSettingsStoreTests: XCTestCase {
         }
     }
 
+    func testFastProfileFreshInstallEnablesEnhancementWithTheAcceleratedLLM() throws {
+        VoxtFastProfile.isActiveOverrideForTesting = true
+        defer { VoxtFastProfile.isActiveOverrideForTesting = nil }
+        try withEphemeralDefaults { defaults in
+            FeatureSettingsStore.migrateIfNeeded(defaults: defaults)
+            let settings = FeatureSettingsStore.load(defaults: defaults)
+
+            XCTAssertTrue(settings.transcription.llmEnabled)
+            XCTAssertEqual(settings.transcription.llmSelectionID, .localLLM(CustomLLMModelCatalog.defaultModelRepo))
+            XCTAssertEqual(defaults.string(forKey: AppPreferenceKey.enhancementMode), EnhancementMode.customLLM.rawValue)
+            XCTAssertEqual(defaults.string(forKey: AppPreferenceKey.customLLMModelRepo), CustomLLMModelCatalog.defaultModelRepo)
+        }
+    }
+
+    func testFastProfileKeepsAStoredEnhancementOff() throws {
+        VoxtFastProfile.isActiveOverrideForTesting = true
+        defer { VoxtFastProfile.isActiveOverrideForTesting = nil }
+        // An existing install: the snapshot written by an earlier launch has enhancement off.
+        try withEphemeralDefaults { defaults in
+            VoxtFastProfile.isActiveOverrideForTesting = false
+            FeatureSettingsStore.migrateIfNeeded(defaults: defaults)
+            VoxtFastProfile.isActiveOverrideForTesting = true
+            FeatureSettingsStore.migrateIfNeeded(defaults: defaults)
+
+            XCTAssertFalse(FeatureSettingsStore.load(defaults: defaults).transcription.llmEnabled)
+            XCTAssertEqual(defaults.string(forKey: AppPreferenceKey.enhancementMode), EnhancementMode.off.rawValue)
+        }
+        // A stored legacy "off" without a snapshot.
+        try withEphemeralDefaults { defaults in
+            defaults.set(EnhancementMode.off.rawValue, forKey: AppPreferenceKey.enhancementMode)
+            FeatureSettingsStore.migrateIfNeeded(defaults: defaults)
+
+            XCTAssertFalse(FeatureSettingsStore.load(defaults: defaults).transcription.llmEnabled)
+            XCTAssertEqual(defaults.string(forKey: AppPreferenceKey.enhancementMode), EnhancementMode.off.rawValue)
+        }
+    }
+
+    func testFreshInstallOutsideTheFastProfileKeepsEnhancementOff() throws {
+        VoxtFastProfile.isActiveOverrideForTesting = false
+        defer { VoxtFastProfile.isActiveOverrideForTesting = nil }
+        try withEphemeralDefaults { defaults in
+            FeatureSettingsStore.migrateIfNeeded(defaults: defaults)
+
+            XCTAssertFalse(FeatureSettingsStore.load(defaults: defaults).transcription.llmEnabled)
+            XCTAssertEqual(defaults.string(forKey: AppPreferenceKey.enhancementMode), EnhancementMode.off.rawValue)
+        }
+    }
+
     func testLoadNormalizationDoesNotBroadcastFeatureSettingsChange() throws {
         try withEphemeralDefaults { defaults in
             let notificationExpectation = expectation(
