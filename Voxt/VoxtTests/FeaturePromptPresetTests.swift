@@ -13,7 +13,7 @@ final class FeaturePromptPresetTests: XCTestCase {
         ] {
             XCTAssertEqual(
                 FeaturePromptPresetCatalog.presets(for: .enhancement, language: language).count,
-                2
+                3
             )
             XCTAssertEqual(
                 FeaturePromptPresetCatalog.presets(for: .translation, language: language).count,
@@ -147,6 +147,24 @@ final class FeaturePromptPresetTests: XCTestCase {
             ),
             customPrompt
         )
+    }
+
+    func testLightCleanupKeepsWordingAndResolvesSelfCorrections() {
+        for language in [
+            AppInterfaceLanguage.english,
+            .chineseSimplified,
+            .japanese
+        ] {
+            let preset = FeaturePromptPresetCatalog.preset(id: "light", for: .enhancement, language: language)
+            XCTAssertNotNil(preset, "light preset missing for \(language)")
+            XCTAssertTrue(preset?.prompt.contains("{{USER_MAIN_LANGUAGE}}") == true)
+            XCTAssertFalse(preset?.prompt.contains("{{RAW_TRANSCRIPTION}}") == true)
+            XCTAssertNotEqual(
+                preset?.prompt,
+                FeaturePromptPresetCatalog.preset(id: "precise", for: .enhancement, language: language)?.prompt
+            )
+        }
+        XCTAssertEqual(FeaturePromptPresetCatalog.defaultPresetID(for: .enhancement), "precise")
     }
 
     func testEnglishAndJapanesePromptsUseLocalizedSpokenPunctuationNames() {

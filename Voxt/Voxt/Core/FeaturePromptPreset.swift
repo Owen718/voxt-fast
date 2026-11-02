@@ -128,6 +128,9 @@ enum FeaturePromptPresetCatalog {
         case .enhancement:
             return [
                 Definition(id: "precise", titleKey: "Precise Cleanup"),
+                // Voxt Fast: removes fillers and resolves self-corrections but keeps the
+                // speaker's own wording (prompt resources <language>-enhancement-light.txt).
+                Definition(id: "light", titleKey: "Light Cleanup"),
                 Definition(id: "structured", titleKey: "Clear Structure")
             ]
         case .translation:
