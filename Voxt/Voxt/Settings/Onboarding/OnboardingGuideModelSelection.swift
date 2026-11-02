@@ -68,28 +68,28 @@ extension OnboardingGuideView {
 
     private var displayedRemoteASRProviders: [RemoteASRProvider] {
         if showsMoreRemoteASRProviders {
-            return RemoteASRProvider.allCases
+            return RemoteASRProvider.visibleCases
         }
         return defaultRemoteASRProviders
     }
 
     var displayedRemoteLLMProviders: [RemoteLLMProvider] {
         if showsMoreRemoteLLMProviders {
-            return RemoteLLMProvider.allCases
+            return RemoteLLMProvider.visibleCases
         }
         return defaultRemoteLLMProviders
     }
 
     private var defaultRemoteASRProviders: [RemoteASRProvider] {
         collapsedModelOptions(
-            all: RemoteASRProvider.allCases,
+            all: RemoteASRProvider.visibleCases,
             preferred: [selectedRemoteASRProvider] + Self.preferredRemoteASRProviders
         )
     }
 
     private var defaultRemoteLLMProviders: [RemoteLLMProvider] {
         collapsedModelOptions(
-            all: RemoteLLMProvider.allCases,
+            all: RemoteLLMProvider.visibleCases,
             preferred: [selectedRemoteLLMProvider] + Self.preferredRemoteLLMProviders
         )
     }
@@ -118,6 +118,11 @@ extension OnboardingGuideView {
 
     var modelStepReady: Bool { isSpeechModelReady(selectedSpeechModel) }
 
+    /// Voxt Fast offers no remote providers, so its guide has no Remote choice.
+    var offersRemoteModels: Bool {
+        !RemoteASRProvider.visibleCases.isEmpty || !RemoteLLMProvider.visibleCases.isEmpty
+    }
+
     var modelGuidePanel: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
@@ -144,20 +149,22 @@ extension OnboardingGuideView {
                     subtitle: AppLocalization.localizedString("Private and offline after download. Only a speech model is required.")
                 )
 
-                modelTabItem(
-                    focus: .remote,
-                    title: AppLocalization.localizedString("Remote"),
-                    subtitle: AppLocalization.localizedString("Requires internet and your provider credentials. Audio is sent to your chosen provider.")
-                )
+                if offersRemoteModels {
+                    modelTabItem(
+                        focus: .remote,
+                        title: AppLocalization.localizedString("Remote"),
+                        subtitle: AppLocalization.localizedString("Requires internet and your provider credentials. Audio is sent to your chosen provider.")
+                    )
+                }
             }
 
             ScrollView {
                 Group {
                     switch modelFocus {
-                    case .local:
-                        localModelActions
-                    case .remote:
+                    case .remote where offersRemoteModels:
                         remoteModelActions
+                    case .local, .remote:
+                        localModelActions
                     }
                 }
                 .padding(14)
@@ -280,10 +287,10 @@ extension OnboardingGuideView {
                         }
                     )
                 }
-                if RemoteASRProvider.allCases.count > defaultRemoteASRProviders.count {
+                if RemoteASRProvider.visibleCases.count > defaultRemoteASRProviders.count {
                     moreListButton(
                         isExpanded: showsMoreRemoteASRProviders,
-                        expandedCount: RemoteASRProvider.allCases.count,
+                        expandedCount: RemoteASRProvider.visibleCases.count,
                         collapsedCount: defaultRemoteASRProviders.count
                     ) {
                         showsMoreRemoteASRProviders.toggle()
@@ -312,10 +319,10 @@ extension OnboardingGuideView {
                         }
                     )
                 }
-                if RemoteLLMProvider.allCases.count > defaultRemoteLLMProviders.count {
+                if RemoteLLMProvider.visibleCases.count > defaultRemoteLLMProviders.count {
                     moreListButton(
                         isExpanded: showsMoreRemoteLLMProviders,
-                        expandedCount: RemoteLLMProvider.allCases.count,
+                        expandedCount: RemoteLLMProvider.visibleCases.count,
                         collapsedCount: defaultRemoteLLMProviders.count
                     ) {
                         showsMoreRemoteLLMProviders.toggle()
@@ -330,7 +337,7 @@ extension OnboardingGuideView {
         HStack(spacing: 10) {
             Spacer(minLength: 0)
 
-            if modelFocus == .local {
+            if modelFocus == .local || !offersRemoteModels {
                 Button(AppLocalization.localizedString("Model Location")) {
                     isModelStorageDialogPresented = true
                 }

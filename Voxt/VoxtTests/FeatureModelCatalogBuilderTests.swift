@@ -536,6 +536,21 @@ final class FeatureModelCatalogBuilderTests: MLXModelManagerTestCase {
         XCTAssertEqual(qwenLLMGroup.badgeText, recommended)
     }
 
+    func testFastProfileSelectorsOfferOnlyTheAcceleratedModels() {
+        VoxtFastProfile.isActiveOverrideForTesting = true
+        defer { VoxtFastProfile.isActiveOverrideForTesting = nil }
+        let asr = FeatureModelSelectionID.mlx(MLXModelCatalog.defaultModelRepo)
+        let llm = FeatureModelSelectionID.localLLM(CustomLLMModelCatalog.defaultModelRepo)
+        let builder = makeBuilder(featureSettings: makeFeatureSettings(transcriptionASR: asr))
+
+        for sheet in [FeatureModelSelectorSheet.transcriptionASR, .translationASR, .rewriteASR, .meetingASR] {
+            XCTAssertEqual(builder.entries(for: sheet).map(\.selectionID), [asr], sheet.rawValue)
+        }
+        for sheet in [FeatureModelSelectorSheet.transcriptionLLM, .transcriptionNoteTitle, .rewriteLLM, .meetingSummary, .translationModel] {
+            XCTAssertEqual(builder.entries(for: sheet).map(\.selectionID), [llm], sheet.rawValue)
+        }
+    }
+
     private func makeBuilder(
         mlxModelManager: MLXModelManager? = nil,
         featureSettings: FeatureSettings,

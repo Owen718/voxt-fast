@@ -208,7 +208,7 @@ extension OnboardingSettingsView {
                         engineRaw = TranscriptionEngine.remote.rawValue
                     }
                 ),
-                options: RemoteASRProvider.allCases.map { provider in
+                options: RemoteASRProvider.visibleCases.map { provider in
                     SettingsMenuOption(value: provider.rawValue, title: provider.title)
                 },
                 selectedTitle: selectedRemoteASRProvider.title,
@@ -303,7 +303,7 @@ extension OnboardingSettingsView {
                         enhancementModeRaw = EnhancementMode.remoteLLM.rawValue
                     }
                 ),
-                options: RemoteLLMProvider.allCases.map { provider in
+                options: RemoteLLMProvider.visibleCases.map { provider in
                     SettingsMenuOption(value: provider.rawValue, title: provider.title)
                 },
                 selectedTitle: selectedRemoteLLMProvider.title,

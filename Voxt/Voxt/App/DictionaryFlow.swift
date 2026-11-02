@@ -109,7 +109,7 @@ extension AppDelegate {
             )
         }
 
-        for provider in RemoteLLMProvider.allCases {
+        for provider in RemoteLLMProvider.visibleCases {
             guard RemoteModelConfigurationStore.isStoredLLMConfigurationConfigured(
                 provider: provider,
                 stored: remoteLLMConfigurations
@@ -381,7 +381,8 @@ extension AppDelegate {
 
         if optionID.hasPrefix("remote:") {
             let rawProvider = String(optionID.dropFirst("remote:".count))
-            guard let provider = RemoteLLMProvider(rawValue: rawProvider) else {
+            guard let provider = RemoteLLMProvider(rawValue: rawProvider),
+                  RemoteLLMProvider.visibleCases.contains(provider) else {
                 throw NSError(
                     domain: "Voxt.DictionaryHistoryScan",
                     code: -6,

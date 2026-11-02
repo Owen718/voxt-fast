@@ -324,7 +324,13 @@ struct MLXModelCatalog {
         )
     ]
 
-    nonisolated static let availableModels: [Option] = allModels
+    /// Models the user can download and select. Voxt Fast offers only the checkpoint its bundled
+    /// engine accelerates; `supportedModels` stays complete so stored repos keep their titles
+    /// and installed copies can still be found and removed.
+    nonisolated static var availableModels: [Option] {
+        guard VoxtFastProfile.isActive else { return allModels }
+        return allModels.filter { $0.id == defaultModelRepo }
+    }
     nonisolated static let supportedModels: [Option] = allModels
 
     nonisolated private static let capabilitiesByRepo: [String: MLXASRModelCapability] = {
@@ -516,8 +522,11 @@ struct MLXModelCatalog {
         return availableModels.contains { $0.id == canonicalRepo }
     }
 
-    nonisolated static func displayModels(includingInstalled _: Set<String>) -> [Option] {
-        availableModels
+    /// Selectable models, plus any of `installedRepos` that the catalog supports but hides
+    /// (Voxt Fast) so they can still be removed. Retired repos never reappear.
+    nonisolated static func displayModels(includingInstalled installedRepos: Set<String>) -> [Option] {
+        let availableRepos = Set(availableModels.map(\.id))
+        return supportedModels.filter { availableRepos.contains($0.id) || installedRepos.contains($0.id) }
     }
 
     nonisolated static func isRealtimeCapableModelRepo(_ repo: String) -> Bool {

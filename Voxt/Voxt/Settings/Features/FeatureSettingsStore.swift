@@ -114,8 +114,8 @@ enum FeatureSettingsStore {
             defaults.set(CustomLLMGenerationSettingsStore.storageValue(forByRepo: settings), forKey: AppPreferenceKey.customLLMGenerationSettingsByRepo)
         }
         let catalogs: [(String, Set<String>)] = [
-            (AppPreferenceKey.mlxRemoteSizeCache, Set(MLXModelCatalog.availableModels.map(\.id))),
-            (AppPreferenceKey.customLLMRemoteSizeCache, Set(CustomLLMModelCatalog.availableModels.map(\.id)))
+            (AppPreferenceKey.mlxRemoteSizeCache, Set(MLXModelCatalog.supportedModels.map(\.id))),
+            (AppPreferenceKey.customLLMRemoteSizeCache, Set(CustomLLMModelCatalog.supportedModels.map(\.id)))
         ]
         for (key, activeRepos) in catalogs {
             guard let data = defaults.data(forKey: key),

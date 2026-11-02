@@ -120,7 +120,7 @@ extension AppDelegate {
             }
         }
 
-        let configuredRemoteOptions: [MeetingSummaryModelOption] = RemoteLLMProvider.allCases.compactMap { provider -> MeetingSummaryModelOption? in
+        let configuredRemoteOptions: [MeetingSummaryModelOption] = RemoteLLMProvider.visibleCases.compactMap { provider -> MeetingSummaryModelOption? in
             let configuration = RemoteModelConfigurationStore.resolvedLLMConfiguration(
                 provider: provider,
                 stored: remoteLLMConfigurations
@@ -553,7 +553,8 @@ extension AppDelegate {
         }
 
         if let providerRawValue = value(in: selectionID, forPrefix: "remote-llm:"),
-           let provider = RemoteLLMProvider(rawValue: providerRawValue) {
+           let provider = RemoteLLMProvider(rawValue: providerRawValue),
+           RemoteLLMProvider.visibleCases.contains(provider) {
             let configuration = RemoteModelConfigurationStore.resolvedLLMConfiguration(
                 provider: provider,
                 stored: remoteLLMConfigurations

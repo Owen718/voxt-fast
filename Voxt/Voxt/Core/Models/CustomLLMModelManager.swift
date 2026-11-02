@@ -23,7 +23,7 @@ class CustomLLMModelManager: ObservableObject {
     typealias ModelOption = CustomLLMModelCatalog.Option
 
     nonisolated static let defaultModelRepo = CustomLLMModelCatalog.defaultModelRepo
-    nonisolated static let availableModels = CustomLLMModelCatalog.availableModels
+    nonisolated static var availableModels: [ModelOption] { CustomLLMModelCatalog.availableModels }
     nonisolated static let supportedModels = CustomLLMModelCatalog.supportedModels
 
     @Published private(set) var state: ModelState = .notDownloaded
@@ -483,9 +483,12 @@ class CustomLLMModelManager: ObservableObject {
         ]
     }
 
+    /// Installation state covers every supported model, including ones the catalog hides
+    /// (Voxt Fast), so installed copies can be listed and removed. Downloads and inference
+    /// stay limited to `availableModels`.
     func isModelDownloaded(repo: String) -> Bool {
         let repo = Self.canonicalModelRepo(repo)
-        guard Self.availableModels.contains(where: { $0.id == repo }) else { return false }
+        guard Self.supportedModels.contains(where: { $0.id == repo }) else { return false }
         requestInstallation(repo)
         return downloadedStateByRepo[repo] ?? false
     }
@@ -493,12 +496,14 @@ class CustomLLMModelManager: ObservableObject {
     /// Preflight must not reject an installed model while its first background
     /// scan is pending. The async inference entry point waits for validation.
     func canAttemptInference(repo: String) -> Bool {
-        isModelDownloaded(repo: repo) || isCheckingInstallation(repo: repo)
+        let canonicalRepo = Self.canonicalModelRepo(repo)
+        guard Self.availableModels.contains(where: { $0.id == canonicalRepo }) else { return false }
+        return isModelDownloaded(repo: canonicalRepo) || isCheckingInstallation(repo: canonicalRepo)
     }
 
     func isCheckingInstallation(repo: String) -> Bool {
         let repo = Self.canonicalModelRepo(repo)
-        guard Self.availableModels.contains(where: { $0.id == repo }) else { return false }
+        guard Self.supportedModels.contains(where: { $0.id == repo }) else { return false }
         requestInstallation(repo)
         return downloadedStateByRepo[repo] == nil
     }
@@ -507,7 +512,7 @@ class CustomLLMModelManager: ObservableObject {
     func refreshInstallation(repo: String) async throws -> ModelInstallationSnapshot {
         let repo = Self.canonicalModelRepo(repo)
         guard !isShuttingDownForApplicationTermination, !deletingRepos.contains(repo),
-              Self.availableModels.contains(where: { $0.id == repo }) else { throw CancellationError() }
+              Self.supportedModels.contains(where: { $0.id == repo }) else { throw CancellationError() }
         let request = installationRequest(repo)
         return try await installationCache.value(repo) { request.scan() }
     }
@@ -551,7 +556,7 @@ class CustomLLMModelManager: ObservableObject {
         if refresh, !installationCache.hasPendingRequest(modelRepo), downloadTasksByRepo[modelRepo] == nil {
             invalidateLocalCache(for: modelRepo)
         }
-        guard Self.availableModels.contains(where: { $0.id == modelRepo }) else {
+        guard Self.supportedModels.contains(where: { $0.id == modelRepo }) else {
             setState(.notDownloaded, for: modelRepo)
             return
         }
@@ -627,6 +632,7 @@ class CustomLLMModelManager: ObservableObject {
 
     private func performDownload(forRepo repo: String) async {
         let canonicalRepo = Self.canonicalModelRepo(repo)
+        guard Self.availableModels.contains(where: { $0.id == canonicalRepo }) else { return }
         if downloadTasksByRepo[canonicalRepo] != nil || deletingRepos.contains(canonicalRepo) { return }
         do {
             let installation = try await refreshInstallation(repo: canonicalRepo)
@@ -1075,7 +1081,7 @@ class CustomLLMModelManager: ObservableObject {
 
     private func requestInstallation(_ repo: String) {
         guard !isShuttingDownForApplicationTermination, !deletingRepos.contains(repo), installationCache.needsRequest(repo) else { return }
-        guard Self.availableModels.contains(where: { $0.id == repo }) else { return }
+        guard Self.supportedModels.contains(where: { $0.id == repo }) else { return }
         let request = installationRequest(repo)
         installationCache.request(repo) { request.scan() }
     }

@@ -105,7 +105,14 @@ extension MLXModelManager {
 
     /// Auxiliary VAD artifacts share download/storage handling, not the ASR
     /// catalog or STT loader. Never reopen arbitrary retired repo loading.
+    /// Supported-but-hidden models (Voxt Fast) stay managed so an installed copy is still
+    /// detected and can be removed; downloads are limited to `availableModels`.
     nonisolated static func isManagedArtifactRepo(_ repo: String) -> Bool {
+        repo == SileroVADModelSupport.repo || supportedModels.contains { $0.id == repo }
+    }
+
+    /// Whether `repo` may be downloaded: the VAD artifact or a model the catalog offers.
+    nonisolated static func isDownloadableArtifactRepo(_ repo: String) -> Bool {
         repo == SileroVADModelSupport.repo || availableModels.contains { $0.id == repo }
     }
 

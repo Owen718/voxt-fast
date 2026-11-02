@@ -39,10 +39,12 @@ struct ModelCatalogBuilder {
     func asrEntries() -> [ModelCatalogEntry] {
         var entries = [ModelCatalogEntry]()
 
-        entries.append(dictationASREntry())
+        if VoxtFastProfile.showsAppleBuiltInModels {
+            entries.append(dictationASREntry())
+        }
         entries.append(contentsOf: mlxASREntries())
 
-        entries.append(contentsOf: RemoteASRProvider.allCases.map { provider in
+        entries.append(contentsOf: RemoteASRProvider.visibleCases.map { provider in
             let selectionID = FeatureModelSelectionID.remoteASR(provider)
             let configuration = RemoteModelConfigurationStore.resolvedASRConfiguration(
                 provider: provider,
@@ -84,7 +86,7 @@ struct ModelCatalogBuilder {
     func llmEntries() -> [ModelCatalogEntry] {
         var entries = [ModelCatalogEntry]()
 
-        if appleIntelligenceAvailability != .unsupportedOS {
+        if VoxtFastProfile.showsAppleBuiltInModels, appleIntelligenceAvailability != .unsupportedOS {
             let selectionID = FeatureModelSelectionID.appleIntelligence
             let isAvailable = appleIntelligenceAvailability.isAvailable
             let decoration = catalogDecoration(
@@ -120,6 +122,10 @@ struct ModelCatalogBuilder {
             let repo = model.id
             let selectionID = FeatureModelSelectionID.localLLM(repo)
             let snapshot = customLLMInstallSnapshot(repo)
+            let actions = catalogActions(
+                for: snapshot,
+                removalOnly: !CustomLLMModelCatalog.isAvailableModelRepo(repo)
+            )
             let decoration = catalogDecoration(
                 base: [localizedModelCatalog("Local")] + llmCatalogTags(for: repo),
                 installed: snapshot.isInstalled,
@@ -139,14 +145,18 @@ struct ModelCatalogBuilder {
                 statusText: snapshot.statusText,
                 usageLocations: decoration.usageLocations,
                 badgeText: snapshot.badgeText,
-                primaryAction: catalogPrimaryAction(snapshot),
-                secondaryActions: catalogSecondaryActions(snapshot)
+                primaryAction: actions.primary,
+                secondaryActions: actions.secondary
             )
         })
 
         entries.append(contentsOf: ggufTranslationDisplayModelsIncludingInstalled().map { model in
             let selectionID = FeatureModelSelectionID.localGGUFTranslation(model.id)
             let snapshot = ggufTranslationInstallSnapshot(model.id)
+            let actions = catalogActions(
+                for: snapshot,
+                removalOnly: !GGUFTranslationModelCatalog.isAvailableModel(model.id)
+            )
 
             let decoration = catalogDecoration(
                 base: model.tags,
@@ -167,12 +177,12 @@ struct ModelCatalogBuilder {
                 statusText: snapshot.statusText,
                 usageLocations: decoration.usageLocations,
                 badgeText: snapshot.badgeText,
-                primaryAction: catalogPrimaryAction(snapshot),
-                secondaryActions: catalogSecondaryActions(snapshot)
+                primaryAction: actions.primary,
+                secondaryActions: actions.secondary
             )
         })
 
-        entries.append(contentsOf: RemoteLLMProvider.allCases.map { provider in
+        entries.append(contentsOf: RemoteLLMProvider.visibleCases.map { provider in
             let selectionID = FeatureModelSelectionID.remoteLLM(provider)
             let configured = RemoteModelConfigurationStore.isStoredLLMConfigurationConfigured(
                 provider: provider,
@@ -213,53 +223,64 @@ struct ModelCatalogBuilder {
         return entries
     }
 
+    /// Available models are always listed. Models the catalog hides (Voxt Fast) are listed
+    /// only while they still occupy disk space, so they can be removed.
     private func customLLMDisplayModelsIncludingInstalled() -> [CustomLLMModelCatalog.Option] {
-        var includedRepos = Set(CustomLLMModelManager.supportedModels.compactMap { model -> String? in
-            let repo = CustomLLMModelManager.canonicalModelRepo(model.id)
-            let snapshot = customLLMInstallSnapshot(repo)
-            switch snapshot.state {
-            case .installed, .downloading, .paused:
-                return repo
-            case .checking, .installable, .cancelling, .uninstalling:
-                return nil
-            }
+        let retainedRepos = Set(CustomLLMModelManager.supportedModels.compactMap { model -> String? in
+            guard !CustomLLMModelCatalog.isAvailableModelRepo(model.id) else { return nil }
+            return Self.occupiesDisk(customLLMInstallSnapshot(model.id)) ? model.id : nil
         })
-        includedRepos.insert(CustomLLMModelManager.canonicalModelRepo(customLLMManager.currentModelRepo))
-
-        if featureSettings.transcription.llmEnabled,
-           case .localLLM(let repo)? = featureSettings.transcription.llmSelectionID.textSelection {
-            includedRepos.insert(CustomLLMModelManager.canonicalModelRepo(repo))
-        }
-        if case .localLLM(let repo)? = featureSettings.translation.modelSelectionID.translationSelection {
-            includedRepos.insert(CustomLLMModelManager.canonicalModelRepo(repo))
-        }
-        if case .localLLM(let repo)? = featureSettings.rewrite.llmSelectionID.textSelection {
-            includedRepos.insert(CustomLLMModelManager.canonicalModelRepo(repo))
-        }
-        if case .localLLM(let repo)? = featureSettings.meeting.summaryModelSelectionID.textSelection {
-            includedRepos.insert(CustomLLMModelManager.canonicalModelRepo(repo))
-        }
-
-        return CustomLLMModelManager.displayModels(includingInstalled: includedRepos)
+        return CustomLLMModelManager.displayModels(includingInstalled: retainedRepos)
     }
 
     private func ggufTranslationDisplayModelsIncludingInstalled() -> [GGUFTranslationModelOption] {
-        var includedIDs = Set(GGUFTranslationModelCatalog.allModels.compactMap { model -> GGUFTranslationModelID? in
-            let snapshot = ggufTranslationInstallSnapshot(model.id)
-            switch snapshot.state {
-            case .installed, .downloading, .paused:
-                return model.id
-            case .checking, .installable, .cancelling, .uninstalling:
-                return nil
-            }
+        let retainedIDs = Set(GGUFTranslationModelCatalog.allModels.compactMap { model -> GGUFTranslationModelID? in
+            guard !GGUFTranslationModelCatalog.isAvailableModel(model.id) else { return nil }
+            return Self.occupiesDisk(ggufTranslationInstallSnapshot(model.id)) ? model.id : nil
         })
-        includedIDs.insert(ggufTranslationModelManager.selectedModelID)
+        return GGUFTranslationModelCatalog.displayModels(includingInstalled: retainedIDs)
+    }
 
-        if case .localGGUF(let modelID)? = featureSettings.translation.modelSelectionID.translationSelection {
-            includedIDs.insert(modelID)
+    static func occupiesDisk(_ snapshot: LocalModelInstallSnapshot) -> Bool {
+        switch snapshot.state {
+        case .installed, .downloading, .paused, .cancelling, .uninstalling:
+            return true
+        case .checking, .installable:
+            return false
         }
+    }
 
-        return GGUFTranslationModelCatalog.displayModels(includingInstalled: includedIDs)
+    /// Row actions for a local model. A model the catalog hides (Voxt Fast) is listed only so
+    /// its files can be removed: it offers Uninstall (or Cancel for a partial download) and
+    /// Open Location, never Install, Continue or Configure.
+    func catalogActions(
+        for snapshot: LocalModelInstallSnapshot,
+        removalOnly: Bool
+    ) -> (primary: ModelTableAction?, secondary: [ModelTableAction]) {
+        guard removalOnly else {
+            return (catalogPrimaryAction(snapshot), catalogSecondaryActions(snapshot))
+        }
+        let removalSnapshot = LocalModelInstallSnapshot(
+            target: snapshot.target,
+            state: snapshot.state,
+            isInstalled: snapshot.isInstalled,
+            isCurrentSelection: snapshot.isCurrentSelection,
+            statusText: snapshot.statusText,
+            badgeText: snapshot.badgeText,
+            downloadStatus: snapshot.downloadStatus,
+            canOpenLocation: snapshot.canOpenLocation,
+            canConfigure: false,
+            configureActionTitle: nil
+        )
+        switch snapshot.state {
+        case .installed, .uninstalling, .checking, .cancelling:
+            return (catalogPrimaryAction(removalSnapshot), catalogSecondaryActions(removalSnapshot))
+        case .downloading, .paused:
+            // The secondary actions carry Cancel, which discards the partial download.
+            return (nil, catalogSecondaryActions(removalSnapshot))
+        case .installable:
+            return (nil, [])
+        }
     }
 
     func usageLocations(for selectionID: FeatureModelSelectionID) -> [String] {

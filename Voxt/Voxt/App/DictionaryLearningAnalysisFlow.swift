@@ -465,7 +465,8 @@ extension AppDelegate {
 
         if optionID.hasPrefix("remote:") {
             let rawProvider = String(optionID.dropFirst("remote:".count))
-            guard let provider = RemoteLLMProvider(rawValue: rawProvider) else {
+            guard let provider = RemoteLLMProvider(rawValue: rawProvider),
+                  RemoteLLMProvider.visibleCases.contains(provider) else {
                 throw NSError(
                     domain: "Voxt.AutomaticDictionaryLearning",
                     code: -5,

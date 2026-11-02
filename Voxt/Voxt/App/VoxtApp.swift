@@ -306,6 +306,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var mainWindowPresentationState = MainWindowPresentationState()
 
     override init() {
+        // Voxt Fast: hidden models must not reach the managers below, which read these keys
+        // before `FeatureSettingsStore.migrateIfNeeded` normalizes the feature settings.
+        VoxtFastProfile.sanitizeStoredSelections(defaults: .standard)
         let storedRepo = UserDefaults.standard.string(forKey: AppPreferenceKey.mlxModelRepo)
             ?? MLXModelManager.defaultModelRepo
         let repo = MLXModelManager.canonicalModelRepo(storedRepo)
@@ -492,7 +495,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func refreshTextEnhancerAvailability() {
-        guard #available(macOS 26.0, *) else {
+        // Voxt Fast uses its accelerated local LLM only, Apple Intelligence included.
+        guard #available(macOS 26.0, *), VoxtFastProfile.showsAppleBuiltInModels else {
             enhancer = nil
             return
         }

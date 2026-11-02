@@ -550,6 +550,51 @@ final class ModelCatalogBuilderTests: XCTestCase {
         XCTAssertEqual(qwenLLMGroup.badgeText, recommended)
     }
 
+    func testFastProfileCatalogListsAcceleratedModelsAndHiddenInstalledOnesForRemovalOnly() throws {
+        VoxtFastProfile.isActiveOverrideForTesting = true
+        defer { VoxtFastProfile.isActiveOverrideForTesting = nil }
+        let asrRepo = MLXModelCatalog.defaultModelRepo
+        let llmRepo = CustomLLMModelCatalog.defaultModelRepo
+        let installedHiddenLLM = "mlx-community/gemma-4-e2b-it-4bit"
+        let pausedHiddenLLM = "mlx-community/Qwen3.5-9B-OptiQ-4bit"
+        let builder = makeBuilder(
+            featureSettings: makeFeatureSettings(transcriptionASR: .mlx(asrRepo), translationASR: .mlx(asrRepo)),
+            isPausedCustomLLM: { $0 == pausedHiddenLLM },
+            isCustomLLMInstalled: { $0 == installedHiddenLLM },
+            isGGUFTranslationInstalled: { $0 == .hyMT2Q8_0 }
+        )
+        let uninstall = AppLocalization.localizedString("Uninstall")
+        let openLocation = AppLocalization.localizedString("Open Location")
+        let cancel = AppLocalization.localizedString("Cancel")
+
+        let asrEntries = builder.asrEntries()
+        XCTAssertFalse(asrEntries.contains { $0.id == FeatureModelSelectionID.dictation.rawValue })
+        XCTAssertFalse(asrEntries.contains { $0.id.hasPrefix("remote-asr:") })
+        XCTAssertNotNil(asrEntries.first { $0.id == "mlx:\(asrRepo)" })
+        // The test snapshots report every ASR model installed: hidden ones stay listed for removal.
+        let hiddenASR = try XCTUnwrap(asrEntries.first { $0.id == "mlx:mlx-community/whisper-large-v3-turbo" })
+        XCTAssertEqual(hiddenASR.primaryAction?.title, uninstall)
+        XCTAssertEqual(hiddenASR.secondaryActions.map(\.title), [openLocation])
+
+        let llmEntries = builder.llmEntries()
+        XCTAssertFalse(llmEntries.contains { $0.id == "apple-intelligence" })
+        XCTAssertFalse(llmEntries.contains { $0.id.hasPrefix("remote-llm:") })
+        XCTAssertEqual(
+            Set(llmEntries.filter { $0.id.hasPrefix("local-llm:") }.map(\.id)),
+            ["local-llm:\(llmRepo)", "local-llm:\(installedHiddenLLM)", "local-llm:\(pausedHiddenLLM)"]
+        )
+        let installedHidden = try XCTUnwrap(llmEntries.first { $0.id == "local-llm:\(installedHiddenLLM)" })
+        XCTAssertEqual(installedHidden.primaryAction?.title, uninstall)
+        XCTAssertEqual(installedHidden.secondaryActions.map(\.title), [openLocation])
+        let pausedHidden = try XCTUnwrap(llmEntries.first { $0.id == "local-llm:\(pausedHiddenLLM)" })
+        XCTAssertNil(pausedHidden.primaryAction)
+        XCTAssertEqual(pausedHidden.secondaryActions.map(\.title), [cancel])
+        XCTAssertEqual(
+            llmEntries.filter { $0.id.hasPrefix("local-gguf-translation:") }.map(\.id),
+            ["local-gguf-translation:\(GGUFTranslationModelID.hyMT2Q8_0.rawValue)"]
+        )
+    }
+
     private func makeBuilder(
         featureSettings: FeatureSettings,
         remoteASRConfigurations: [String: RemoteProviderConfiguration] = [:],

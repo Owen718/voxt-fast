@@ -444,7 +444,13 @@ struct CustomLLMModelCatalog {
 
     nonisolated private static let allModels: [Option] = visibleModels
 
-    nonisolated static let availableModels: [Option] = allModels
+    /// Models the user can download and select. Voxt Fast offers only the checkpoint its bundled
+    /// engine accelerates; `supportedModels` stays complete so stored repos keep their titles
+    /// and installed copies can still be found and removed.
+    nonisolated static var availableModels: [Option] {
+        guard VoxtFastProfile.isActive else { return allModels }
+        return allModels.filter { $0.id == defaultModelRepo }
+    }
 
     nonisolated static let supportedModels: [Option] = allModels
 
@@ -486,7 +492,7 @@ struct CustomLLMModelCatalog {
     /// Only this alias renames the same checkpoint; retired model settings must not
     /// be copied onto a different replacement model.
     nonisolated static func preservesGenerationSettings(for repo: String) -> Bool {
-        availableModels.contains { $0.id == repo }
+        supportedModels.contains { $0.id == repo }
             || repo == "mlx-community/Qwen3.5-2B-MLX-4bit"
     }
 
@@ -500,8 +506,11 @@ struct CustomLLMModelCatalog {
         return displayModels(includingInstalled: [repo])
     }
 
-    nonisolated static func displayModels(includingInstalled _: Set<String>) -> [Option] {
-        availableModels
+    /// Selectable models, plus any of `installedRepos` that the catalog supports but hides
+    /// (Voxt Fast) so they can still be removed. Retired repos never reappear.
+    nonisolated static func displayModels(includingInstalled installedRepos: Set<String>) -> [Option] {
+        let availableRepos = Set(availableModels.map(\.id))
+        return supportedModels.filter { availableRepos.contains($0.id) || installedRepos.contains($0.id) }
     }
 
     nonisolated static func displayTitle(for repo: String) -> String {
@@ -522,6 +531,13 @@ struct CustomLLMModelCatalog {
 
     nonisolated static func isSupportedModelRepo(_ repo: String) -> Bool {
         option(for: repo) != nil
+    }
+
+    /// Whether `repo` (after alias resolution) can be selected; narrower than
+    /// `isSupportedModelRepo` only in Voxt Fast.
+    nonisolated static func isAvailableModelRepo(_ repo: String) -> Bool {
+        let canonicalRepo = canonicalModelRepo(repo)
+        return availableModels.contains { $0.id == canonicalRepo }
     }
 
     /// Loading architecture, not an image-input capability. Voxt sends text only.

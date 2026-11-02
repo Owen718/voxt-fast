@@ -60,8 +60,11 @@ extension AppDelegate {
         let promptProfile: String
     }
 
+    /// Providers the build does not offer (Voxt Fast offers none) never count as configured,
+    /// so no fallback sends text to them.
     func isStoredRemoteLLMConfigured(_ provider: RemoteLLMProvider) -> Bool {
-        RemoteModelConfigurationStore.isStoredLLMConfigurationConfigured(
+        RemoteLLMProvider.visibleCases.contains(provider)
+            && RemoteModelConfigurationStore.isStoredLLMConfigurationConfigured(
             provider: provider,
             stored: remoteLLMConfigurations
         )

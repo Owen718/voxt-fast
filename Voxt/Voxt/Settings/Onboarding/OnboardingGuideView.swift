@@ -212,7 +212,8 @@ struct OnboardingGuideView: View {
             refreshLocalizedGuideSamples()
             reloadFeatureSettings()
             if !hasLoadedSettings {
-                if case .remote? = featureSettings.transcription.asrSelectionID.asrSelection {
+                if offersRemoteModels,
+                   case .remote? = featureSettings.transcription.asrSelectionID.asrSelection {
                     modelFocus = .remote
                 }
                 hasLoadedSettings = true

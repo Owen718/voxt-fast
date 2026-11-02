@@ -5,7 +5,7 @@ import SwiftUI
 
 extension ModelSettingsView {
     var configuredRemoteLLMOptions: [TranslationModelOption] {
-        RemoteLLMProvider.allCases.compactMap { provider in
+        RemoteLLMProvider.visibleCases.compactMap { provider in
             guard let config = remoteLLMConfigurations[provider.rawValue] else {
                 return nil
             }

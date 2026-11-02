@@ -132,13 +132,16 @@ enum FeatureSettingsNormalization {
         _ selectionID: FeatureModelSelectionID,
         fallback: FeatureModelSelectionID
     ) -> FeatureModelSelectionID {
+        // Selections the catalog does not offer (in Voxt Fast: other local models, Direct
+        // Dictation and remote providers) fall back to the default local model.
+        let defaultSelection = FeatureModelSelectionID.mlx(MLXModelCatalog.defaultModelRepo)
         switch selectionID.asrSelection {
         case .dictation:
-            return .dictation
+            return VoxtFastProfile.showsAppleBuiltInModels ? .dictation : defaultSelection
         case let .mlx(repo):
-            return .mlx(MLXModelCatalog.isAvailableModelRepo(repo) ? repo : MLXModelCatalog.defaultModelRepo)
+            return MLXModelCatalog.isAvailableModelRepo(repo) ? .mlx(repo) : defaultSelection
         case let .remote(provider):
-            return .remoteASR(provider)
+            return RemoteASRProvider.visibleCases.contains(provider) ? .remoteASR(provider) : defaultSelection
         case .none:
             return fallback
         }
@@ -148,13 +151,14 @@ enum FeatureSettingsNormalization {
         _ selectionID: FeatureModelSelectionID,
         fallback: FeatureModelSelectionID
     ) -> FeatureModelSelectionID {
+        let defaultSelection = FeatureModelSelectionID.localLLM(CustomLLMModelCatalog.defaultModelRepo)
         switch selectionID.textSelection {
         case .localLLM(let repo):
-            return .localLLM(CustomLLMModelCatalog.isSupportedModelRepo(repo) ? repo : CustomLLMModelCatalog.defaultModelRepo)
+            return CustomLLMModelCatalog.isAvailableModelRepo(repo) ? .localLLM(repo) : defaultSelection
         case .appleIntelligence:
-            return .appleIntelligence
+            return VoxtFastProfile.showsAppleBuiltInModels ? .appleIntelligence : defaultSelection
         case .remoteLLM(let provider):
-            return .remoteLLM(provider)
+            return RemoteLLMProvider.visibleCases.contains(provider) ? .remoteLLM(provider) : defaultSelection
         case .none:
             return fallback
         }
@@ -164,13 +168,14 @@ enum FeatureSettingsNormalization {
         _ selectionID: FeatureModelSelectionID,
         fallback: FeatureModelSelectionID
     ) -> FeatureModelSelectionID {
+        let defaultSelection = FeatureModelSelectionID.localLLM(CustomLLMModelCatalog.defaultModelRepo)
         switch selectionID.translationSelection {
         case let .localLLM(repo):
-            return .localLLM(CustomLLMModelCatalog.isSupportedModelRepo(repo) ? repo : CustomLLMModelCatalog.defaultModelRepo)
+            return CustomLLMModelCatalog.isAvailableModelRepo(repo) ? .localLLM(repo) : defaultSelection
         case let .localGGUF(modelID):
-            return .localGGUFTranslation(modelID)
+            return GGUFTranslationModelCatalog.isAvailableModel(modelID) ? .localGGUFTranslation(modelID) : defaultSelection
         case let .remoteLLM(provider):
-            return .remoteLLM(provider)
+            return RemoteLLMProvider.visibleCases.contains(provider) ? .remoteLLM(provider) : defaultSelection
         case .none:
             return fallback
         }

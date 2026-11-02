@@ -250,7 +250,7 @@ enum ModelDebugCatalog {
         }
         options.append(contentsOf: localMLX)
 
-        let remote = RemoteASRProvider.allCases.compactMap { provider -> ASRDebugModelOption? in
+        let remote = RemoteASRProvider.visibleCases.compactMap { provider -> ASRDebugModelOption? in
             let configuration = RemoteModelConfigurationStore.resolvedASRConfiguration(
                 provider: provider,
                 stored: remoteASRConfigurations
@@ -305,7 +305,7 @@ enum ModelDebugCatalog {
             }
         options.append(contentsOf: local)
 
-        let remote = RemoteLLMProvider.allCases.compactMap { provider -> LLMDebugModelOption? in
+        let remote = RemoteLLMProvider.visibleCases.compactMap { provider -> LLMDebugModelOption? in
             guard RemoteModelConfigurationStore.isStoredLLMConfigurationConfigured(
                 provider: provider,
                 stored: remoteLLMConfigurations

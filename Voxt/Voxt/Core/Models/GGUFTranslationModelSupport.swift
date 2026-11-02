@@ -57,14 +57,23 @@ enum GGUFTranslationModelCatalog {
     ]
 
     static let allModels: [GGUFTranslationModelOption] = visibleModels
-    static let availableModels: [GGUFTranslationModelOption] = visibleModels
+    /// Voxt Fast translates with its accelerated LLM and offers no GGUF translation model.
+    static var availableModels: [GGUFTranslationModelOption] {
+        VoxtFastProfile.isActive ? [] : visibleModels
+    }
+
+    static func isAvailableModel(_ id: GGUFTranslationModelID) -> Bool {
+        availableModels.contains { $0.id == id }
+    }
 
     static func option(for id: GGUFTranslationModelID) -> GGUFTranslationModelOption {
         allModels.first(where: { $0.id == id }) ?? allModels[0]
     }
 
-    static func displayModels(includingInstalled _: Set<GGUFTranslationModelID>) -> [GGUFTranslationModelOption] {
-        visibleModels
+    /// Selectable models, plus any of `installedIDs` that are hidden (Voxt Fast) so they can
+    /// still be removed.
+    static func displayModels(includingInstalled installedIDs: Set<GGUFTranslationModelID>) -> [GGUFTranslationModelOption] {
+        allModels.filter { isAvailableModel($0.id) || installedIDs.contains($0.id) }
     }
 
     static func resolvedModelID(_ rawValue: String?) -> GGUFTranslationModelID {

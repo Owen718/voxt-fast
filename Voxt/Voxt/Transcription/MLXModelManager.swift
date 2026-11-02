@@ -20,7 +20,7 @@ class MLXModelManager: ObservableObject {
     typealias ModelOption = MLXModelCatalog.Option
 
     nonisolated static let defaultModelRepo = MLXModelCatalog.defaultModelRepo
-    nonisolated static let availableModels = MLXModelCatalog.availableModels
+    nonisolated static var availableModels: [ModelOption] { MLXModelCatalog.availableModels }
     nonisolated static let supportedModels = MLXModelCatalog.supportedModels
 
     @Published private(set) var state: ModelState = .notDownloaded
@@ -167,6 +167,7 @@ class MLXModelManager: ObservableObject {
         guard !isShuttingDownForApplicationTermination else { throw CancellationError() }
         let canonicalRepo = Self.canonicalModelRepo(repo)
         try checkDownloadAvailability(for: canonicalRepo)
+        guard Self.isDownloadableArtifactRepo(canonicalRepo) else { throw CancellationError() }
         let installation = try await refreshInstallation(repo: canonicalRepo)
         if let modelDir = installation.directory {
             return modelDir
@@ -467,6 +468,7 @@ class MLXModelManager: ObservableObject {
             setState(.error(error.localizedDescription), for: canonicalRepo)
             return
         }
+        guard Self.isDownloadableArtifactRepo(canonicalRepo) else { return }
         if downloadTasksByRepo[canonicalRepo] != nil || deletingRepos.contains(canonicalRepo) { return }
         do {
             let installation = try await refreshInstallation(repo: canonicalRepo)
@@ -819,6 +821,8 @@ class MLXModelManager: ObservableObject {
               let configuration = OmniASRBackend.configuration(for: kind) else {
             throw OmniASRBackend.Unavailability.runtimeUnavailable
         }
+        // Models the catalog hides (Voxt Fast) are kept on disk for removal only.
+        guard Self.isDownloadableArtifactRepo(repo) else { throw CancellationError() }
         let sourceModelDir: URL
         let installation = try await refreshInstallation(repo: repo)
         if let validDirectory = installation.directory {

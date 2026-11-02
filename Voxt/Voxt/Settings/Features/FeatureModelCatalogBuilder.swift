@@ -229,27 +229,9 @@ struct FeatureModelCatalogBuilder {
     private func asrEntries(for sheet: FeatureModelSelectorSheet) -> [FeatureModelSelectorEntry] {
         var entries = [FeatureModelSelectorEntry]()
         let dictationSelectable = sheet != .meetingASR
-        entries.append(
-            FeatureModelSelectorEntry(
-                selectionID: .dictation,
-                title: localized("Direct Dictation"),
-                engine: localized("Apple"),
-                sizeText: localized("Built-in"),
-                ratingText: "3.4",
-                filterTags: [localized("Local"), localized("Built-in"), localized("Multilingual"), localized("Installed")],
-                displayTags: featureDisplayTags(
-                    base: [localized("Local"), localized("Built-in"), localized("Multilingual")],
-                    requiresConfiguration: false,
-                    configured: true,
-                    selectionID: .dictation
-                ),
-                statusText: localized("Works immediately with no model download."),
-                usageLocations: usageLabels(for: .dictation),
-                badgeText: nil,
-                isSelectable: dictationSelectable,
-                disabledReason: dictationSelectable ? nil : localized("Direct Dictation is not available for Meeting mode.")
-            )
-        )
+        if VoxtFastProfile.showsAppleBuiltInModels {
+            entries.append(dictationEntry(isSelectable: dictationSelectable))
+        }
 
         entries.append(contentsOf: mlxModelManager.displayModelsIncludingInstalled().map { model in
             let selectionID = FeatureModelSelectionID.mlx(model.id)
@@ -291,7 +273,7 @@ struct FeatureModelCatalogBuilder {
             from: remoteASRProviderConfigurationsRaw,
             sensitiveValueLoading: .metadataOnly
         )
-        entries.append(contentsOf: RemoteASRProvider.allCases.map { provider in
+        entries.append(contentsOf: RemoteASRProvider.visibleCases.map { provider in
             let selectionID = FeatureModelSelectionID.remoteASR(provider)
             let configuration = RemoteModelConfigurationStore.resolvedASRConfiguration(
                 provider: provider,
@@ -327,6 +309,28 @@ struct FeatureModelCatalogBuilder {
         return entries
     }
 
+    private func dictationEntry(isSelectable: Bool) -> FeatureModelSelectorEntry {
+        FeatureModelSelectorEntry(
+            selectionID: .dictation,
+            title: localized("Direct Dictation"),
+            engine: localized("Apple"),
+            sizeText: localized("Built-in"),
+            ratingText: "3.4",
+            filterTags: [localized("Local"), localized("Built-in"), localized("Multilingual"), localized("Installed")],
+            displayTags: featureDisplayTags(
+                base: [localized("Local"), localized("Built-in"), localized("Multilingual")],
+                requiresConfiguration: false,
+                configured: true,
+                selectionID: .dictation
+            ),
+            statusText: localized("Works immediately with no model download."),
+            usageLocations: usageLabels(for: .dictation),
+            badgeText: nil,
+            isSelectable: isSelectable,
+            disabledReason: isSelectable ? nil : localized("Direct Dictation is not available for Meeting mode.")
+        )
+    }
+
     static func localSelectorAvailability(
         isInstalled: Bool,
         isChecking: Bool = false,
@@ -343,7 +347,8 @@ struct FeatureModelCatalogBuilder {
 
     private func llmEntries(includeAppleIntelligence: Bool) -> [FeatureModelSelectorEntry] {
         var entries = [FeatureModelSelectorEntry]()
-        if includeAppleIntelligence, appleIntelligenceAvailability != .unsupportedOS {
+        if includeAppleIntelligence, VoxtFastProfile.showsAppleBuiltInModels,
+           appleIntelligenceAvailability != .unsupportedOS {
             let isAvailable = appleIntelligenceAvailability.isAvailable
             entries.append(
                 FeatureModelSelectorEntry(
@@ -406,7 +411,7 @@ struct FeatureModelCatalogBuilder {
             from: remoteLLMProviderConfigurationsRaw,
             sensitiveValueLoading: .metadataOnly
         )
-        entries.append(contentsOf: RemoteLLMProvider.allCases.map { provider in
+        entries.append(contentsOf: RemoteLLMProvider.visibleCases.map { provider in
             let selectionID = FeatureModelSelectionID.remoteLLM(provider)
             let isConfigured = RemoteModelConfigurationStore.isStoredLLMConfigurationConfigured(
                 provider: provider,
@@ -446,28 +451,11 @@ struct FeatureModelCatalogBuilder {
         return entries
     }
 
+    /// Only selectable models: installed models the catalog hides (Voxt Fast) are listed in
+    /// Model settings for removal, never offered here. Feature selections are normalized to
+    /// selectable models, so they are always part of this list.
     private func customLLMDisplayModelsIncludingFeatureSelections() -> [CustomLLMModelCatalog.Option] {
-        var includedRepos = Set(
-            customLLMManager.displayModelsIncludingInstalled()
-                .map { CustomLLMModelManager.canonicalModelRepo($0.id) }
-        )
-
-        func includeLocalLLMSelection(_ selectionID: FeatureModelSelectionID) {
-            guard case .localLLM(let repo)? = selectionID.textSelection else { return }
-            includedRepos.insert(CustomLLMModelManager.canonicalModelRepo(repo))
-        }
-
-        if featureSettings.transcription.llmEnabled {
-            includeLocalLLMSelection(featureSettings.transcription.llmSelectionID)
-        }
-        if featureSettings.transcription.notes.enabled {
-            includeLocalLLMSelection(featureSettings.transcription.notes.titleModelSelectionID)
-        }
-        includeLocalLLMSelection(featureSettings.translation.modelSelectionID)
-        includeLocalLLMSelection(featureSettings.rewrite.llmSelectionID)
-        includeLocalLLMSelection(featureSettings.meeting.summaryModelSelectionID)
-
-        return CustomLLMModelManager.displayModels(includingInstalled: includedRepos)
+        customLLMManager.displayModelsIncludingInstalled()
     }
 
     private func translationEntries(
@@ -475,7 +463,7 @@ struct FeatureModelCatalogBuilder {
         targetLanguage: TranslationTargetLanguage
     ) -> [FeatureModelSelectorEntry] {
         var entries = llmEntries(includeAppleIntelligence: false)
-        entries.append(contentsOf: GGUFTranslationModelCatalog.allModels.compactMap { model in
+        entries.append(contentsOf: GGUFTranslationModelCatalog.availableModels.compactMap { model in
             guard ggufTranslationModelManager.isModelDownloaded(id: model.id) else {
                 return nil
             }

@@ -242,6 +242,12 @@ enum RemoteASRProvider: String, CaseIterable, Identifiable {
 
     nonisolated var id: String { rawValue }
 
+    /// Providers offered in settings and onboarding. Voxt Fast runs on its bundled local
+    /// engines only and offers none; stored selections fall back to the local model.
+    static var visibleCases: [RemoteASRProvider] {
+        VoxtFastProfile.isActive ? [] : allCases
+    }
+
     var title: String {
         switch self {
         case .openAIWhisper:
@@ -360,6 +366,12 @@ enum RemoteLLMProvider: String, CaseIterable, Identifiable {
     case xiaomiMiMo
 
     var id: String { rawValue }
+
+    /// Providers offered in settings and onboarding. Voxt Fast runs on its bundled local
+    /// engines only and offers none; stored selections fall back to the local model.
+    static var visibleCases: [RemoteLLMProvider] {
+        VoxtFastProfile.isActive ? [] : allCases
+    }
 
     nonisolated var usesResponsesAPI: Bool {
         switch self {
