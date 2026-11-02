@@ -122,7 +122,7 @@ actor FastLLMEngine {
             }
         }
         stopProcess()
-        throw EngineError.exited("It did not start; see ~/Library/Logs/Voxt Fast/llm-engine.log.")
+        throw EngineError.exited("It did not start; see ~/Library/Logs/SoL-Voxt/llm-engine.log.")
     }
 
     private func stopProcess() {
@@ -166,7 +166,7 @@ actor FastLLMEngine {
 
     private static func logHandle() -> FileHandle {
         let directory = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/Voxt Fast", isDirectory: true)
+            .appendingPathComponent("Library/Logs/SoL-Voxt", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let url = directory.appendingPathComponent("llm-engine.log")
         FileManager.default.createFile(atPath: url.path, contents: nil)

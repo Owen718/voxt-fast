@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds dist/Voxt Fast.app and dist/Voxt-Fast.zip:
+# Builds dist/SoL-Voxt.app and dist/SoL-Voxt.zip:
 #   1. engines/asr        -> asr_engine + asr.metallib
 #   2. engines/llm        -> voxt-llm-engine + mlx-swift_Cmlx.bundle
 #   3. adapter            -> qwen3_asr_server (Voxt's server interface in front of asr_engine)
@@ -67,10 +67,10 @@ if ! nice -n 10 xcodebuild build \
 fi
 
 echo "== assemble"
-app="$root/dist/Voxt Fast.app"
+app="$root/dist/SoL-Voxt.app"
 rm -rf "$root/dist"
 mkdir -p "$root/dist"
-ditto "$build/app/Build/Products/Release/Voxt Fast.app" "$app"
+ditto "$build/app/Build/Products/Release/SoL-Voxt.app" "$app"
 resources="$app/Contents/Resources"
 bin="$resources/OmniRuntime/bin"
 mkdir -p "$bin" "$resources/FastLLM"
@@ -92,6 +92,6 @@ done
 codesign --force --sign - --timestamp=none --preserve-metadata=entitlements "$app"
 codesign --verify --deep --strict "$app"
 
-ditto -c -k --keepParent "$app" "$root/dist/Voxt-Fast.zip"
+ditto -c -k --keepParent "$app" "$root/dist/SoL-Voxt.zip"
 echo "built $app"
-ls -lh "$root/dist/Voxt-Fast.zip"
+ls -lh "$root/dist/SoL-Voxt.zip"

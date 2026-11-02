@@ -1,6 +1,6 @@
-# Voxt Fast
+# SoL-Voxt
 
-Voxt Fast 是 macOS 听写应用 [Voxt](https://github.com/sgl-project/sglang-omni/tree/main/Voxt) 的一个改版。它把 Voxt 里的两个本地模型换成了加速引擎，模型本身没有换：
+SoL-Voxt（原名 Voxt Fast）是 macOS 听写应用 [Voxt](https://github.com/sgl-project/sglang-omni/tree/main/Voxt) 的一个改版。它把 Voxt 里的两个本地模型换成了加速引擎，模型本身没有换：
 
 - **语音识别**：Qwen3-ASR 1.7B（6 bit）的流式引擎。说话时，屏幕上的文字跟得更紧。
 - **文字润色**：Qwen3.5-4B-OptiQ（4 bit）的推理引擎。说完后，去口癖、改标点这一步更快完成。
@@ -13,7 +13,7 @@ Voxt Fast 是 macOS 听写应用 [Voxt](https://github.com/sgl-project/sglang-om
 
 测试机是 MacBook Pro（M4 Pro，48 GB），表中是中位数。两行数字都是本仓库的引擎在测试机空闲时，用各自优化任务的评分器测得的。
 
-| 环节 | 原版 | Voxt Fast |
+| 环节 | 原版 | SoL-Voxt |
 |---|---|---|
 | 说话时屏幕出字的延迟（短 / 中 / 长句） | 319 / 397 / 388 ms | 64 / 83 / 98 ms |
 | 说完后润色完成的耗时（短 / 中 / 长段） | 1.57 / 1.97 / 3.83 s | 0.20 / 0.27 / 0.70 s |
@@ -34,11 +34,11 @@ Voxt Fast 是 macOS 听写应用 [Voxt](https://github.com/sgl-project/sglang-om
 
 ## 安装
 
-1. 从 [Releases](../../releases) 下载 `Voxt-Fast.zip`，解压后把 `Voxt Fast.app` 拖进“应用程序”。
+1. 从 [Releases](../../releases) 下载 `SoL-Voxt.zip`（v0.1.2 及以前为 `Voxt-Fast.zip`），解压后把 `SoL-Voxt.app` 拖进“应用程序”。从 Voxt Fast 升级时，先退出并删除旧的 `Voxt Fast.app`；bundle id 没变，设置和已下载的模型都会保留。
 2. 这个应用没有经过 Apple 公证，第一次打开前要在终端里去掉隔离标记：
 
    ```bash
-   xattr -dr com.apple.quarantine "/Applications/Voxt Fast.app"
+   xattr -dr com.apple.quarantine "/Applications/SoL-Voxt.app"
    ```
 
 3. 打开应用，按提示授予麦克风和辅助功能权限。辅助功能权限用于把文字输入到其他应用。
@@ -65,7 +65,7 @@ defaults write com.voxt.Voxt.fast VoxtFastUseBluetoothMicForDictation -bool true
 
 - 听写时，活动监视器里能看到 `asr_engine` 进程。
 - 润色时能看到 `voxt-llm-engine` 进程。
-- 润色引擎的日志在 `~/Library/Logs/Voxt Fast/llm-engine.log`。
+- 润色引擎的日志在 `~/Library/Logs/SoL-Voxt/llm-engine.log`。
 
 如果想临时关掉润色加速、改回原来的路径：
 
@@ -116,9 +116,9 @@ scripts/build-app.sh
 1. 编译两个引擎和转接程序。
 2. 按 Voxt 所在的 commit 编译 SGLang-Omni 的原生运行时。
 3. 编译 Voxt。
-4. 把引擎放进 `Voxt Fast.app/Contents/Resources`，对整个应用做本机签名。
+4. 把引擎放进 `SoL-Voxt.app/Contents/Resources`，对整个应用做本机签名。
 
-结果在 `dist/Voxt Fast.app` 和 `dist/Voxt-Fast.zip`。也可以单独编译两个引擎：
+结果在 `dist/SoL-Voxt.app` 和 `dist/SoL-Voxt.zip`。也可以单独编译两个引擎：
 
 ```bash
 engines/asr/build.sh          # -> engines/asr/build/bin/asr_engine
@@ -143,7 +143,7 @@ engines/llm/scripts/build.sh  # -> engines/llm/build/bin/voxt-llm-engine
 Voxt 源码以单独的提交导入，之后的改动都在后续提交里。改动只有以下几处：
 
 - `Voxt/Core/Models/FastLLMEngine.swift`（新增）和 `CustomLLMModelManager.swift`：把满足条件的本地润色请求交给加速引擎。
-- `Voxt/Config/Fast.xcconfig`（新增）：应用名改为“Voxt Fast”，bundle id 改为 `com.voxt.Voxt.fast`，不启用沙盒，使用本机签名。
+- `Voxt/Config/Fast.xcconfig`（新增）：应用名改为“SoL-Voxt”（原名 Voxt Fast），bundle id 改为 `com.voxt.Voxt.fast`，不启用沙盒，使用本机签名。
 - `AppUpdateManager.swift`：对 `.fast` 关闭 Sparkle 自动更新，避免被官方版本覆盖。
 
 ## 已知问题

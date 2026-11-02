@@ -13,7 +13,7 @@ struct SettingsSidebarInfoBlock: View {
                 HStack(spacing: 6) {
                     SettingsWebsiteIconView()
                         .frame(width: 14, height: 14)
-                    Text("Voxt")
+                    Text(AppLocalization.appName)
                         .font(.system(size: 12, weight: .semibold))
                         .lineLimit(1)
                         .truncationMode(.tail)

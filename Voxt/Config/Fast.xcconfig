@@ -1,13 +1,14 @@
-// Voxt Fast: Voxt with the bundled fast Qwen3-ASR and Qwen3.5-4B engines (see ../README.md).
+// SoL-Voxt (formerly Voxt Fast): Voxt with the bundled fast Qwen3-ASR and Qwen3.5-4B engines (see ../README.md).
 // Applied on top of the Release configuration with `xcodebuild -xcconfig`.
 //
 // xcodebuild applies this file to every target, Swift packages included, so the
 // target-specific settings are keyed on the app target and fall back to each other
 // target's own value.
 VOXT_FAST_BUNDLE_IDENTIFIER_Voxt = com.voxt.Voxt.fast
-VOXT_FAST_PRODUCT_NAME_Voxt = Voxt Fast
+VOXT_FAST_PRODUCT_NAME_Voxt = SoL-Voxt
 PRODUCT_BUNDLE_IDENTIFIER = $(VOXT_FAST_BUNDLE_IDENTIFIER_$(TARGET_NAME:c99extidentifier):default=$(inherited))
 PRODUCT_NAME = $(VOXT_FAST_PRODUCT_NAME_$(TARGET_NAME:c99extidentifier):default=$(inherited))
+INFOPLIST_KEY_CFBundleDisplayName = $(VOXT_FAST_PRODUCT_NAME_$(TARGET_NAME:c99extidentifier):default=$(inherited))
 // The app starts the engine processes, which the App Sandbox forbids.
 VOXT_FAST_ENABLE_APP_SANDBOX_Voxt = NO
 VOXT_FAST_CODE_SIGN_ENTITLEMENTS_Voxt = Voxt/VoxtOmniDev.entitlements

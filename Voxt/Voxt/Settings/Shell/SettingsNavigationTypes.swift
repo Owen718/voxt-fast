@@ -89,7 +89,7 @@ enum SettingsNavigationSection: String, Hashable {
         case .historyEntries: return "History Entries"
         case .permissionsMain: return "Permissions"
         case .permissionsAppBranchURLAuthorization: return "App Branch URL Authorization"
-        case .aboutVoxt: return "Voxt"
+        case .aboutVoxt: return AppLocalization.appName
         case .aboutProject: return "Project"
         case .aboutAuthor: return "Author"
         case .aboutThanks: return "Thanks"

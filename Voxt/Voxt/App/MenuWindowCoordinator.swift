@@ -153,7 +153,7 @@ extension AppDelegate {
         }
 
         menu.addItem(NSMenuItem.separator())
-        let quitItem = NSMenuItem(title: AppLocalization.localizedString("Quit Voxt"), action: #selector(quit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: AppLocalization.localizedAppString("Quit Voxt"), action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
         statusItem?.menu = menu

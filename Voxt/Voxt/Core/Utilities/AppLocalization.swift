@@ -65,6 +65,20 @@ nonisolated enum AppLocalization {
         String(format: localizedString(key), locale: locale, arguments: arguments)
     }
 
+    /// The bundle's display name: "Voxt" upstream, the product name in builds that rename the app.
+    static let appName: String = {
+        let info = Bundle.main.infoDictionary
+        let name = (info?["CFBundleDisplayName"] as? String) ?? (info?["CFBundleName"] as? String)
+        guard let name, !name.isEmpty else { return "Voxt" }
+        return name
+    }()
+
+    /// Localizes a string that names the app, using the bundle's own name in place of "Voxt".
+    static func localizedAppString(_ key: String) -> String {
+        let value = localizedString(key)
+        return appName == "Voxt" ? value : value.replacingOccurrences(of: "Voxt", with: appName)
+    }
+
     private static func cachedLocalizedString(_ key: String, localeIdentifier: String) -> String {
         let cacheKey = "\(localeIdentifier)\u{1F}\(key)"
         localizedStringCacheLock.lock()
