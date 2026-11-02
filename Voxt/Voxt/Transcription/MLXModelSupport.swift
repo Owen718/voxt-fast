@@ -329,7 +329,7 @@ struct MLXModelCatalog {
     /// and installed copies can still be found and removed.
     nonisolated static var availableModels: [Option] {
         guard VoxtFastProfile.isActive else { return allModels }
-        return allModels.filter { $0.id == defaultModelRepo }
+        return allModels.filter { VoxtFastProfile.asrModelRepos.contains($0.id) }
     }
     nonisolated static let supportedModels: [Option] = allModels
 

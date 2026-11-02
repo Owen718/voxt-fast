@@ -7,6 +7,7 @@ import XCTest
 @MainActor
 final class VoxtFastProfileTests: XCTestCase {
     private let acceleratedASRRepo = "mlx-community/Qwen3-ASR-1.7B-6bit"
+    private let acceleratedSmallASRRepo = "mlx-community/Qwen3-ASR-0.6B-4bit"
     private let acceleratedLLMRepo = "mlx-community/Qwen3.5-4B-OptiQ-4bit"
 
     override func tearDown() {
@@ -54,8 +55,8 @@ final class VoxtFastProfileTests: XCTestCase {
     func testFastProfileOffersOnlyTheAcceleratedModels() {
         VoxtFastProfile.isActiveOverrideForTesting = true
 
-        XCTAssertEqual(MLXModelCatalog.availableModels.map(\.id), [acceleratedASRRepo])
-        XCTAssertEqual(MLXModelManager.availableModels.map(\.id), [acceleratedASRRepo])
+        XCTAssertEqual(MLXModelCatalog.availableModels.map(\.id), [acceleratedSmallASRRepo, acceleratedASRRepo])
+        XCTAssertEqual(MLXModelManager.availableModels.map(\.id), [acceleratedSmallASRRepo, acceleratedASRRepo])
         XCTAssertEqual(CustomLLMModelCatalog.availableModels.map(\.id), [acceleratedLLMRepo])
         XCTAssertEqual(CustomLLMModelManager.availableModels.map(\.id), [acceleratedLLMRepo])
         XCTAssertTrue(GGUFTranslationModelCatalog.availableModels.isEmpty)
@@ -68,7 +69,8 @@ final class VoxtFastProfileTests: XCTestCase {
         XCTAssertEqual(MLXModelCatalog.displayTitle(for: "mlx-community/whisper-large-v3-turbo"), "Whisper Large v3 Turbo")
         XCTAssertTrue(CustomLLMModelCatalog.isSupportedModelRepo("mlx-community/gemma-4-e2b-it-4bit"))
         XCTAssertFalse(CustomLLMModelCatalog.isAvailableModelRepo("mlx-community/gemma-4-e2b-it-4bit"))
-        XCTAssertFalse(MLXModelCatalog.isAvailableModelRepo("mlx-community/Qwen3-ASR-0.6B-4bit"))
+        XCTAssertTrue(MLXModelCatalog.isAvailableModelRepo(acceleratedSmallASRRepo))
+        XCTAssertFalse(MLXModelCatalog.isAvailableModelRepo("mlx-community/Qwen3-ASR-1.7B-8bit"))
         // Aliases of the accelerated checkpoints stay selectable.
         XCTAssertTrue(MLXModelCatalog.isAvailableModelRepo("mlx-community/Qwen3-ASR-1.7B-4bit"))
         XCTAssertTrue(CustomLLMModelCatalog.isAvailableModelRepo("mlx-community/Qwen3-4B-4bit"))
@@ -115,7 +117,7 @@ final class VoxtFastProfileTests: XCTestCase {
             settings.transcription.notes.titleModelSelectionID = .remoteLLM(.openAI)
             settings.translation.asrSelectionID = .remoteASR(.doubaoASR)
             settings.translation.modelSelectionID = .localGGUFTranslation(.hyMT2Q4KM)
-            settings.rewrite.asrSelectionID = .mlx("mlx-community/Qwen3-ASR-0.6B-4bit")
+            settings.rewrite.asrSelectionID = .mlx("mlx-community/Qwen3-ASR-1.7B-8bit")
             settings.rewrite.llmSelectionID = .localLLM("mlx-community/gemma-4-e4b-it-4bit")
             settings.meeting.asrSelectionID = .mlx("mlx-community/whisper-large-v3-turbo")
             settings.meeting.summaryModelSelectionID = .remoteLLM(.anthropic)
