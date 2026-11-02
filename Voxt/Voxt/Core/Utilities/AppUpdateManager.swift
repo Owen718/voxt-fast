@@ -577,6 +577,12 @@ final class AppUpdateManager: NSObject, ObservableObject, SPUStandardUserDriverD
         )
     }
 
+    /// Whether this build checks for updates at all. Settings hide the update preference
+    /// where it would do nothing (development, test and Voxt Fast bundles).
+    static var supportsUpdateChecks: Bool {
+        shouldEnableSparkle(bundleIdentifier: Bundle.main.bundleIdentifier)
+    }
+
     static func shouldEnableSparkle(bundleIdentifier: String?) -> Bool {
         guard let bundleIdentifier = bundleIdentifier?.trimmingCharacters(in: .whitespacesAndNewlines),
               !bundleIdentifier.isEmpty

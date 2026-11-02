@@ -159,6 +159,13 @@ enum FeatureSettingsStore {
         )
     }
 
+    /// Enhancement mode for a fresh install, which has neither a feature-settings snapshot nor
+    /// a stored `enhancementMode`. Voxt Fast enhances dictation with its accelerated local LLM
+    /// out of the box; stored choices, including an explicit "off", are never overridden.
+    static var defaultEnhancementMode: EnhancementMode {
+        VoxtFastProfile.isActive ? .customLLM : .off
+    }
+
     static func deriveFromLegacy(defaults: UserDefaults = .standard) -> FeatureSettings {
         let transcriptionASR = legacyASRSelection(defaults: defaults)
         let transcriptionText = legacyTranscriptionTextSelection(defaults: defaults)
@@ -185,7 +192,8 @@ enum FeatureSettingsStore {
         return FeatureSettings(
             transcription: TranscriptionFeatureSettings(
                 asrSelectionID: transcriptionASR,
-                llmEnabled: (EnhancementMode(rawValue: defaults.string(forKey: AppPreferenceKey.enhancementMode) ?? "") ?? .off) != .off,
+                llmEnabled: (EnhancementMode(rawValue: defaults.string(forKey: AppPreferenceKey.enhancementMode) ?? "")
+                    ?? defaultEnhancementMode) != .off,
                 llmSelectionID: transcriptionText,
                 prompt: transcriptionPrompt,
                 promptPresetID: FeaturePromptPresetCatalog.inferredPresetID(

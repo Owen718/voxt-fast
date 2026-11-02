@@ -237,6 +237,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var remoteLLMWarmupTasksByKey: [String: Task<Void, Never>] = [:]
     var overlayReminderTask: Task<Void, Never>?
     var overlayStatusClearTask: Task<Void, Never>?
+    /// The "model is not installed" notice for dictation enhancement is shown once per launch;
+    /// later sessions insert the raw text quietly.
+    var didShowMissingEnhancementModelNotice = false
     var toastDismissTask: Task<Void, Never>?
     var pendingSelectedTextTranslationRefreshTask: Task<Void, Never>?
     var pendingMeetingStartupTask: Task<Void, Never>?
