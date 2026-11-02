@@ -138,7 +138,25 @@ int main(int argc, char **argv) {
   gpu::Context::get();
 
   s2::Stream stream(model_path);
-  stream.set_options(s2::Options());
+  {
+    // Qwen3-ASR 0.6B (text hidden size 1024; 1.7B is 2048): its language guess on a segment's
+    // first fraction of a second is often "English" for Chinese speech, and its early guesses can
+    // be whole made-up sentences. Keep the preview hint automatic (no adopt_lang), do not let the
+    // draft hysteresis keep an early stop token, and do not teacher-force a retained prefix. The
+    // 1.7B options are unchanged.
+    s2::Options o;
+    const json::Value cfg = json::parse(json::read_file(model_path + "/config.json"));
+    if (cfg["thinker_config"]["text_config"]["hidden_size"].as_int() < 2048) {
+      // A made-up sentence from a segment's first half second can stay identical for seconds and
+      // would be teacher-forced as the retained prefix, ending in a stop token, so new speech was
+      // not decoded (0348_en_long: 5 s). Re-verify the whole draft on every preview instead.
+      o.adopt_lang = false;
+      o.exact_stop = true;
+      o.retained = 0;
+      fprintf(stderr, "Qwen3-ASR 0.6B options: adopt_lang off, exact_stop on, retained 0\n");
+    }
+    stream.set_options(o);
+  }
   // Warm up the Metal pipelines and the first-update paths on synthetic audio before the first
   // session. Without it the first update of every session is ~2x slower, and that update sets the
   // update cadence. Two updates cover the two encoder shapes a session starts with: a 0.3 s

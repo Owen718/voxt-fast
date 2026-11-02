@@ -241,6 +241,7 @@ kernel void enc_attn(device const float *q [[buffer(0)]],
                      device float *out [[buffer(3)]],
                      constant int &L [[buffer(4)]],
                      constant float &scale [[buffer(5)]],
+                     constant int &D [[buffer(6)]],  // d_model: row stride of q/k/v/out
                      uint2 tg [[threadgroup_position_in_grid]],
                      uint lane [[thread_index_in_simdgroup]],
                      uint warp [[simdgroup_index_in_threadgroup]]) {
@@ -249,20 +250,20 @@ kernel void enc_attn(device const float *q [[buffer(0)]],
   const int i = int(tg.y) * 8 + int(warp);
   const int base = head * 64 + int(lane) * 2;
   const bool active = i < L;
-  const float q0 = active ? q[(size_t)i * 1024 + base] : 0.0f;
-  const float q1 = active ? q[(size_t)i * 1024 + base + 1] : 0.0f;
+  const float q0 = active ? q[(size_t)i * D + base] : 0.0f;
+  const float q1 = active ? q[(size_t)i * D + base + 1] : 0.0f;
 
   // One lane per key j: the dot product must be summed over the 64 head dims by ONE lane
   // (a warp reduction would mix different j's). Lanes then hold 4 logits each.
   float s[4];
   float mx = -INFINITY;
-  const device float *qp = q + (size_t)i * 1024 + head * 64;
+  const device float *qp = q + (size_t)i * D + head * 64;
   for (int t = 0; t < 4; ++t) {
     const int j = int(lane) + t * 32;
     const bool ok = active && j < L;
     float acc = 0.0f;
     if (ok) {
-      const device float *kp = k + (size_t)j * 1024 + head * 64;
+      const device float *kp = k + (size_t)j * D + head * 64;
       for (int d = 0; d < 64; ++d) acc += qp[d] * kp[d];
     }
     s[t] = ok ? acc * scale : -INFINITY;
@@ -291,11 +292,11 @@ kernel void enc_attn(device const float *q [[buffer(0)]],
     float a0 = 0.0f, a1 = 0.0f;
     for (int j = 0; j < L; ++j) {
       const float p = probs[warp][j];
-      a0 += p * v[(size_t)j * 1024 + base];
-      a1 += p * v[(size_t)j * 1024 + base + 1];
+      a0 += p * v[(size_t)j * D + base];
+      a1 += p * v[(size_t)j * D + base + 1];
     }
-    out[(size_t)i * 1024 + base] = a0;
-    out[(size_t)i * 1024 + base + 1] = a1;
+    out[(size_t)i * D + base] = a0;
+    out[(size_t)i * D + base + 1] = a1;
   }
 }
 

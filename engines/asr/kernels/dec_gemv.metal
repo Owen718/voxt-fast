@@ -20,6 +20,15 @@ instantiate_kernel("affine_qmm_t_splitk_bfloat16_t_gs_64_b_6_alN_true",
                    affine_qmm_t_splitk, bfloat16_t, 64, 6, true)
 instantiate_kernel("affine_dequantize_bfloat16_t_gs_64_b_6",
                    affine_dequantize, bfloat16_t, 64, 6)
+// Qwen3-ASR 0.6B checkpoints are 4-bit.
+instantiate_kernel("affine_qmv_fast_bfloat16_t_gs_64_b_4_batch_0",
+                   affine_qmv_fast, bfloat16_t, 64, 4, false)
+instantiate_kernel("affine_qmm_t_bfloat16_t_gs_64_b_4_alN_true_batch_0",
+                   affine_qmm_t, bfloat16_t, 64, 4, true, false)
+instantiate_kernel("affine_qmm_t_splitk_bfloat16_t_gs_64_b_4_alN_true",
+                   affine_qmm_t_splitk, bfloat16_t, 64, 4, true)
+instantiate_kernel("affine_dequantize_bfloat16_t_gs_64_b_4",
+                   affine_dequantize, bfloat16_t, 64, 4)
 // clang-format on
 
 // Gather packed rows of a 6-bit affine weight (embedding table) for a list of token ids.
